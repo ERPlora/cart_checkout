@@ -1,0 +1,205 @@
+{
+  "id": "cart_checkout",
+  "name": "Cart & Checkout",
+  "version": "1.0.0",
+  "agent": {
+    "description": "Manages shopping carts and the checkout process: add/remove items, initiate checkout, create orders, and mark payments.",
+    "keywords": ["cart", "checkout", "order", "purchase", "basket", "payment", "ecommerce"]
+  },
+  "depends_on": [],
+  "permissions": [
+    "cart_checkout.view_cart",
+    "cart_checkout.manage_cart",
+    "cart_checkout.checkout"
+  ],
+  "role_permissions": {
+    "admin": [
+      "*"
+    ],
+    "manager": [
+      "cart_checkout.view_cart",
+      "cart_checkout.manage_cart",
+      "cart_checkout.checkout"
+    ],
+    "employee": [
+      "cart_checkout.view_cart"
+    ]
+  },
+  "navigation": [
+    {
+      "id": "carts",
+      "label": "Carts",
+      "icon": "bag-check-outline",
+      "component": "erp-cart-checkout-carts"
+    },
+    {
+      "id": "orders",
+      "label": "Orders",
+      "icon": "receipt-outline",
+      "component": "erp-cart-checkout-orders"
+    }
+  ],
+  "migrations": {
+    "sqlite": [
+      "migrations/sqlite/001_init.sql"
+    ]
+  },
+  "queries": {
+    "cart_checkout.carts.list": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/carts_list.sql",
+      "ai": { "description": "Lists active or recent shopping carts" }
+    },
+    "cart_checkout.carts.get": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/cart_get.sql",
+      "ai": { "description": "Retrieves the full detail of a specific shopping cart including its items" }
+    },
+    "cart_checkout.items.list": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/items_list.sql",
+      "ai": { "description": "Lists items added to a shopping cart" }
+    },
+    "cart_checkout.orders.list": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/orders_list.sql",
+      "ai": { "description": "Lists orders generated from the checkout process" }
+    },
+    "cart_checkout.orders.get": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/order_get.sql",
+      "ai": { "description": "Retrieves the full detail of a specific order including its payment status" }
+    }
+  },
+  "commands": {
+    "cart_checkout.carts.create": {
+      "permission": "cart_checkout.manage_cart",
+      "transaction": true,
+      "sql": [
+        "commands/cart_create.sql"
+      ],
+      "schema": "schemas/cart_create.json",
+      "emit": [
+        "cart_checkout.cart.created"
+      ],
+      "ai": { "description": "Creates a new shopping cart for a customer or session" }
+    },
+    "cart_checkout.carts.mark_abandoned": {
+      "permission": "cart_checkout.manage_cart",
+      "transaction": true,
+      "sql": [
+        "commands/cart_mark_abandoned.sql"
+      ],
+      "schema": "schemas/cart_mark_abandoned.json",
+      "emit": [
+        "cart_checkout.cart.abandoned"
+      ],
+      "ai": { "description": "Marks a cart as abandoned when the customer did not complete the purchase" }
+    },
+    "cart_checkout.carts.delete": {
+      "permission": "cart_checkout.manage_cart",
+      "transaction": true,
+      "sql": [
+        "commands/cart_delete.sql"
+      ],
+      "schema": "schemas/cart_delete.json",
+      "emit": [
+        "cart_checkout.cart.deleted"
+      ],
+      "ai": { "description": "Permanently deletes a shopping cart and all its items (destructive)" }
+    },
+    "cart_checkout.items.remove": {
+      "permission": "cart_checkout.manage_cart",
+      "transaction": true,
+      "sql": [
+        "commands/item_remove.sql"
+      ],
+      "schema": "schemas/item_remove.json",
+      "emit": [
+        "cart_checkout.item.removed"
+      ],
+      "ai": { "description": "Removes a specific item from the shopping cart" }
+    },
+    "cart_checkout.orders.mark_paid": {
+      "permission": "cart_checkout.checkout",
+      "transaction": true,
+      "sql": [
+        "commands/order_mark_paid.sql"
+      ],
+      "schema": "schemas/order_mark_paid.json",
+      "emit": [
+        "cart_checkout.order.paid"
+      ],
+      "ai": { "description": "Marks an order as paid after confirming the payment" }
+    },
+    "cart_checkout.orders.fail": {
+      "permission": "cart_checkout.checkout",
+      "transaction": true,
+      "sql": [
+        "commands/order_fail.sql"
+      ],
+      "schema": "schemas/order_fail.json",
+      "emit": [
+        "cart_checkout.order.failed"
+      ],
+      "ai": { "description": "Records an order as failed, indicating the reason for the payment error" }
+    },
+    "cart_checkout.items.add": {
+      "permission": "cart_checkout.manage_cart",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "add_to_cart"
+      },
+      "ai": { "description": "Adds a product to the shopping cart with the specified quantity" }
+    },
+    "cart_checkout.items.update": {
+      "permission": "cart_checkout.manage_cart",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "update_cart_item"
+      },
+      "ai": { "description": "Updates the quantity or options of an item already in the cart" }
+    },
+    "cart_checkout.carts.clear": {
+      "permission": "cart_checkout.manage_cart",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "clear_cart"
+      },
+      "ai": { "description": "Clears all items from a shopping cart, leaving it empty" }
+    },
+    "cart_checkout.carts.cleanup_expired": {
+      "permission": "cart_checkout.manage_cart",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "cleanup_expired_carts"
+      },
+      "ai": { "description": "Deletes or archives expired carts that exceeded the session time limit" }
+    },
+    "cart_checkout.checkout.initiate": {
+      "permission": "cart_checkout.checkout",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "initiate_checkout"
+      },
+      "ai": { "description": "Initiates the checkout process, converting the cart into a pending order awaiting payment" }
+    },
+    "cart_checkout.orders.complete": {
+      "permission": "cart_checkout.checkout",
+      "handler": {
+        "type": "wasm",
+        "file": "dist/handler.wasm",
+        "function": "complete_checkout"
+      },
+      "ai": { "description": "Completes the checkout process, finalizing the order and confirming the purchase" }
+    }
+  },
+  "ui": {
+    "entry": "dist/cart_checkout.esm.js"
+  }
+}

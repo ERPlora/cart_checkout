@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.items.remove",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["item_id"],
+  "properties": {
+    "item_id": { "type": "string", "minLength": 1 }
+  }
+}
