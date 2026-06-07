@@ -4,7 +4,15 @@
   "version": "1.0.0",
   "agent": {
     "description": "Manages shopping carts and the checkout process: add/remove items, initiate checkout, create orders, and mark payments.",
-    "keywords": ["cart", "checkout", "order", "purchase", "basket", "payment", "ecommerce"]
+    "keywords": [
+      "cart",
+      "checkout",
+      "order",
+      "purchase",
+      "basket",
+      "payment",
+      "ecommerce"
+    ]
   },
   "depends_on": [],
   "permissions": [
@@ -48,27 +56,204 @@
     "cart_checkout.carts.list": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/carts_list.sql",
-      "ai": { "description": "Lists active or recent shopping carts" }
+      "list": {
+        "search": [
+          "customer_email",
+          "customer_name"
+        ],
+        "sort": [
+          "id",
+          "session_token",
+          "customer_email",
+          "customer_name",
+          "status",
+          "total_items",
+          "total_amount",
+          "currency",
+          "expires_at",
+          "last_activity_at",
+          "notes",
+          "created_at"
+        ],
+        "default_sort": "created_at",
+        "default_dir": "desc",
+        "filters": {
+          "session_token": {
+            "op": "eq"
+          },
+          "customer_email": {
+            "op": "eq"
+          },
+          "customer_name": {
+            "op": "eq"
+          },
+          "status": {
+            "op": "eq"
+          },
+          "total_items": {
+            "op": "range"
+          },
+          "total_amount": {
+            "op": "range"
+          },
+          "currency": {
+            "op": "eq"
+          },
+          "expires_at": {
+            "op": "range"
+          },
+          "last_activity_at": {
+            "op": "range"
+          },
+          "notes": {
+            "op": "eq"
+          },
+          "created_at": {
+            "op": "range"
+          }
+        },
+        "page_size": 50
+      },
+      "ai": {
+        "description": "Lists active or recent shopping carts"
+      }
     },
     "cart_checkout.carts.get": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/cart_get.sql",
-      "ai": { "description": "Retrieves the full detail of a specific shopping cart including its items" }
+      "ai": {
+        "description": "Retrieves the full detail of a specific shopping cart including its items"
+      }
     },
     "cart_checkout.items.list": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/items_list.sql",
-      "ai": { "description": "Lists items added to a shopping cart" }
+      "list": {
+        "search": [
+          "product_ref",
+          "product_name",
+          "sku"
+        ],
+        "sort": [
+          "id",
+          "cart_id",
+          "product_ref",
+          "product_name",
+          "sku",
+          "quantity",
+          "unit_price",
+          "line_total",
+          "variant_attributes"
+        ],
+        "default_sort": "id",
+        "default_dir": "asc",
+        "filters": {
+          "cart_id": {
+            "op": "eq"
+          },
+          "product_ref": {
+            "op": "eq"
+          },
+          "product_name": {
+            "op": "eq"
+          },
+          "sku": {
+            "op": "eq"
+          },
+          "quantity": {
+            "op": "range"
+          },
+          "unit_price": {
+            "op": "range"
+          },
+          "line_total": {
+            "op": "range"
+          },
+          "variant_attributes": {
+            "op": "eq"
+          }
+        },
+        "page_size": 50
+      },
+      "ai": {
+        "description": "Lists items added to a shopping cart"
+      }
     },
     "cart_checkout.orders.list": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/orders_list.sql",
-      "ai": { "description": "Lists orders generated from the checkout process" }
+      "list": {
+        "search": [
+          "order_number",
+          "customer_email"
+        ],
+        "sort": [
+          "id",
+          "cart_id",
+          "order_number",
+          "customer_email",
+          "shipping_method",
+          "payment_method",
+          "status",
+          "placed_at",
+          "paid_at",
+          "completed_at",
+          "total_amount",
+          "notes",
+          "created_at"
+        ],
+        "default_sort": "created_at",
+        "default_dir": "desc",
+        "filters": {
+          "cart_id": {
+            "op": "eq"
+          },
+          "order_number": {
+            "op": "eq"
+          },
+          "customer_email": {
+            "op": "eq"
+          },
+          "shipping_method": {
+            "op": "eq"
+          },
+          "payment_method": {
+            "op": "eq"
+          },
+          "status": {
+            "op": "eq"
+          },
+          "placed_at": {
+            "op": "range"
+          },
+          "paid_at": {
+            "op": "range"
+          },
+          "completed_at": {
+            "op": "range"
+          },
+          "total_amount": {
+            "op": "range"
+          },
+          "notes": {
+            "op": "eq"
+          },
+          "created_at": {
+            "op": "range"
+          }
+        },
+        "page_size": 50
+      },
+      "ai": {
+        "description": "Lists orders generated from the checkout process"
+      }
     },
     "cart_checkout.orders.get": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/order_get.sql",
-      "ai": { "description": "Retrieves the full detail of a specific order including its payment status" }
+      "ai": {
+        "description": "Retrieves the full detail of a specific order including its payment status"
+      }
     }
   },
   "commands": {
@@ -82,7 +267,9 @@
       "emit": [
         "cart_checkout.cart.created"
       ],
-      "ai": { "description": "Creates a new shopping cart for a customer or session" }
+      "ai": {
+        "description": "Creates a new shopping cart for a customer or session"
+      }
     },
     "cart_checkout.carts.mark_abandoned": {
       "permission": "cart_checkout.manage_cart",
@@ -94,7 +281,9 @@
       "emit": [
         "cart_checkout.cart.abandoned"
       ],
-      "ai": { "description": "Marks a cart as abandoned when the customer did not complete the purchase" }
+      "ai": {
+        "description": "Marks a cart as abandoned when the customer did not complete the purchase"
+      }
     },
     "cart_checkout.carts.delete": {
       "permission": "cart_checkout.manage_cart",
@@ -106,7 +295,9 @@
       "emit": [
         "cart_checkout.cart.deleted"
       ],
-      "ai": { "description": "Permanently deletes a shopping cart and all its items (destructive)" }
+      "ai": {
+        "description": "Permanently deletes a shopping cart and all its items (destructive)"
+      }
     },
     "cart_checkout.items.remove": {
       "permission": "cart_checkout.manage_cart",
@@ -118,7 +309,9 @@
       "emit": [
         "cart_checkout.item.removed"
       ],
-      "ai": { "description": "Removes a specific item from the shopping cart" }
+      "ai": {
+        "description": "Removes a specific item from the shopping cart"
+      }
     },
     "cart_checkout.orders.mark_paid": {
       "permission": "cart_checkout.checkout",
@@ -130,7 +323,9 @@
       "emit": [
         "cart_checkout.order.paid"
       ],
-      "ai": { "description": "Marks an order as paid after confirming the payment" }
+      "ai": {
+        "description": "Marks an order as paid after confirming the payment"
+      }
     },
     "cart_checkout.orders.fail": {
       "permission": "cart_checkout.checkout",
@@ -142,7 +337,9 @@
       "emit": [
         "cart_checkout.order.failed"
       ],
-      "ai": { "description": "Records an order as failed, indicating the reason for the payment error" }
+      "ai": {
+        "description": "Records an order as failed, indicating the reason for the payment error"
+      }
     },
     "cart_checkout.items.add": {
       "permission": "cart_checkout.manage_cart",
@@ -151,7 +348,9 @@
         "file": "dist/handler.wasm",
         "function": "add_to_cart"
       },
-      "ai": { "description": "Adds a product to the shopping cart with the specified quantity" }
+      "ai": {
+        "description": "Adds a product to the shopping cart with the specified quantity"
+      }
     },
     "cart_checkout.items.update": {
       "permission": "cart_checkout.manage_cart",
@@ -160,7 +359,9 @@
         "file": "dist/handler.wasm",
         "function": "update_cart_item"
       },
-      "ai": { "description": "Updates the quantity or options of an item already in the cart" }
+      "ai": {
+        "description": "Updates the quantity or options of an item already in the cart"
+      }
     },
     "cart_checkout.carts.clear": {
       "permission": "cart_checkout.manage_cart",
@@ -169,7 +370,9 @@
         "file": "dist/handler.wasm",
         "function": "clear_cart"
       },
-      "ai": { "description": "Clears all items from a shopping cart, leaving it empty" }
+      "ai": {
+        "description": "Clears all items from a shopping cart, leaving it empty"
+      }
     },
     "cart_checkout.carts.cleanup_expired": {
       "permission": "cart_checkout.manage_cart",
@@ -178,7 +381,9 @@
         "file": "dist/handler.wasm",
         "function": "cleanup_expired_carts"
       },
-      "ai": { "description": "Deletes or archives expired carts that exceeded the session time limit" }
+      "ai": {
+        "description": "Deletes or archives expired carts that exceeded the session time limit"
+      }
     },
     "cart_checkout.checkout.initiate": {
       "permission": "cart_checkout.checkout",
@@ -187,7 +392,9 @@
         "file": "dist/handler.wasm",
         "function": "initiate_checkout"
       },
-      "ai": { "description": "Initiates the checkout process, converting the cart into a pending order awaiting payment" }
+      "ai": {
+        "description": "Initiates the checkout process, converting the cart into a pending order awaiting payment"
+      }
     },
     "cart_checkout.orders.complete": {
       "permission": "cart_checkout.checkout",
@@ -196,7 +403,9 @@
         "file": "dist/handler.wasm",
         "function": "complete_checkout"
       },
-      "ai": { "description": "Completes the checkout process, finalizing the order and confirming the purchase" }
+      "ai": {
+        "description": "Completes the checkout process, finalizing the order and confirming the purchase"
+      }
     }
   },
   "ui": {

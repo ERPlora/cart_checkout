@@ -2,7 +2,7 @@
 -- old_modules/m_cart_checkout/models.py.
 -- Modelos: Cart (carrito guest/identificado con ciclo de vida), CartItem (línea con
 -- variantes) y CheckoutSession (pipeline de checkout iniciado→pagado→completado).
--- Contrato de fila estándar de hub-next (§2.5): hub_id + soft-delete + auditoría.
+-- Contrato de fila estándar de hub (§2.5): hub_id + soft-delete + auditoría.
 
 -- Carrito de la compra. session_token es único por hub (un guest puede reusar el mismo
 -- token en hubs distintos). total_items/total_amount son snapshot denormalizado que
