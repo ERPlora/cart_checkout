@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.checkout.initiate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_token", "customer_email"],
+  "properties": {
+    "session_token": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "customer_email": { "type": "string", "minLength": 3, "maxLength": 255 },
+    "shipping_address": { "type": ["object", "string"], "default": "{}" },
+    "billing_address": { "type": ["object", "string"], "default": "" },
+    "shipping_method": { "type": "string", "default": "", "maxLength": 128 },
+    "payment_method": { "type": "string", "default": "", "maxLength": 128 },
+    "notes": { "type": "string", "default": "" }
+  }
+}

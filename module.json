@@ -49,7 +49,8 @@
   ],
   "migrations": {
     "sqlite": [
-      "migrations/sqlite/001_init.sql"
+      "migrations/sqlite/001_init.sql",
+      "migrations/sqlite/002_order_counter.sql"
     ]
   },
   "queries": {
@@ -303,7 +304,8 @@
       "permission": "cart_checkout.manage_cart",
       "transaction": true,
       "sql": [
-        "commands/item_remove.sql"
+        "commands/item_remove.sql",
+        "commands/_recalc_totals_by_item.sql"
       ],
       "schema": "schemas/item_remove.json",
       "emit": [
@@ -343,69 +345,141 @@
     },
     "cart_checkout.items.add": {
       "permission": "cart_checkout.manage_cart",
+      "schema": "schemas/item_add.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "add_to_cart"
       },
       "ai": {
-        "description": "Adds a product to the shopping cart with the specified quantity"
+        "description": "Adds a product to the shopping cart with the specified quantity (the handler emits cart_checkout.item.added)"
       }
     },
     "cart_checkout.items.update": {
       "permission": "cart_checkout.manage_cart",
+      "schema": "schemas/item_update.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "update_cart_item"
       },
       "ai": {
-        "description": "Updates the quantity or options of an item already in the cart"
+        "description": "Updates the quantity of an item already in the cart; quantity <= 0 removes it (the handler emits cart_checkout.item.updated)"
       }
     },
     "cart_checkout.carts.clear": {
       "permission": "cart_checkout.manage_cart",
+      "schema": "schemas/cart_clear.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "clear_cart"
       },
       "ai": {
-        "description": "Clears all items from a shopping cart, leaving it empty"
+        "description": "Clears all items from a shopping cart, leaving it empty (the handler emits cart_checkout.cart.cleared)"
       }
     },
     "cart_checkout.carts.cleanup_expired": {
       "permission": "cart_checkout.manage_cart",
+      "schema": "schemas/carts_cleanup_expired.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "cleanup_expired_carts"
       },
       "ai": {
-        "description": "Deletes or archives expired carts that exceeded the session time limit"
+        "description": "Marks as expired the active carts whose expires_at is in the past (the handler emits cart_checkout.carts.expired)"
       }
     },
     "cart_checkout.checkout.initiate": {
       "permission": "cart_checkout.checkout",
+      "schema": "schemas/checkout_initiate.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "initiate_checkout"
       },
       "ai": {
-        "description": "Initiates the checkout process, converting the cart into a pending order awaiting payment"
+        "description": "Initiates the checkout process, converting the cart into a pending order awaiting payment (the handler emits cart_checkout.checkout.initiated)"
       }
     },
     "cart_checkout.orders.complete": {
       "permission": "cart_checkout.checkout",
+      "schema": "schemas/order_complete.json",
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",
         "function": "complete_checkout"
       },
       "ai": {
-        "description": "Completes the checkout process, finalizing the order and confirming the purchase"
+        "description": "Completes the checkout process (paid → completed) and marks the cart as converted (the handler emits cart_checkout.order.completed)"
       }
+    },
+    "cart_checkout._insert_item": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_insert_item.sql"
+      ]
+    },
+    "cart_checkout._update_item_qty": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_update_item_qty.sql"
+      ]
+    },
+    "cart_checkout._soft_delete_item": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_soft_delete_item.sql"
+      ]
+    },
+    "cart_checkout._soft_delete_cart_items": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_soft_delete_cart_items.sql"
+      ]
+    },
+    "cart_checkout._recalc_totals_by_token": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_recalc_totals_by_token.sql"
+      ]
+    },
+    "cart_checkout._recalc_totals_by_item": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_recalc_totals_by_item.sql"
+      ]
+    },
+    "cart_checkout._expire_carts": {
+      "permission": "cart_checkout.manage_cart",
+      "sql": [
+        "commands/_expire_carts.sql"
+      ]
+    },
+    "cart_checkout._bump_counter": {
+      "permission": "cart_checkout.checkout",
+      "sql": [
+        "commands/_bump_counter.sql"
+      ]
+    },
+    "cart_checkout._insert_checkout": {
+      "permission": "cart_checkout.checkout",
+      "sql": [
+        "commands/_insert_checkout.sql"
+      ]
+    },
+    "cart_checkout._complete_checkout": {
+      "permission": "cart_checkout.checkout",
+      "sql": [
+        "commands/_complete_checkout.sql"
+      ]
+    },
+    "cart_checkout._convert_cart": {
+      "permission": "cart_checkout.checkout",
+      "sql": [
+        "commands/_convert_cart.sql"
+      ]
     }
   },
   "ui": {

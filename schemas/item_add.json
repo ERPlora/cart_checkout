@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.items.add",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_token", "product_ref", "product_name", "quantity", "unit_price"],
+  "properties": {
+    "session_token": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "product_ref": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "product_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "sku": { "type": "string", "default": "", "maxLength": 128 },
+    "quantity": { "type": "integer", "minimum": 1 },
+    "unit_price": { "type": ["number", "string"] },
+    "variant_attributes": { "type": ["object", "string"], "default": "{}" }
+  }
+}

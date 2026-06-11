@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.items.update",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["item_id", "quantity"],
+  "properties": {
+    "item_id": { "type": "string", "minLength": 1 },
+    "quantity": { "type": "integer" }
+  }
+}

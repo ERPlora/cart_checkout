@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.carts.cleanup_expired",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

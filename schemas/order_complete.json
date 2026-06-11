@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cart_checkout.orders.complete",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["checkout_id"],
+  "properties": {
+    "checkout_id": { "type": "string", "minLength": 1 }
+  }
+}
