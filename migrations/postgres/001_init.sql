@@ -5,7 +5,7 @@
 -- Tipos: subconjunto portable "ERPlora SQL" (ADR-0007):
 --   * ids/refs → TEXT (UUIDs del runtime como texto);
 --   * flags 0/1 → INTEGER (los commands bindean 0/1; Postgres no castea entero→bool);
---   * importes → NUMERIC;
+--   * importes → INTEGER en céntimos (ADR-0007);
 --   * FECHAS → TEXT ISO-8601 (NO TIMESTAMPTZ): el motor de sync (ADR-0031) compara
 --     updated_at como string lexicográfico; timestamptz rompería el LWW entre dialectos.
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS cart_checkout_cart (
     customer_name    TEXT NOT NULL DEFAULT '',
     status           TEXT NOT NULL DEFAULT 'active',   -- active|abandoned|converted|expired
     total_items      INTEGER NOT NULL DEFAULT 0,
-    total_amount     NUMERIC NOT NULL DEFAULT 0,
+    total_amount     INTEGER NOT NULL DEFAULT 0,  -- céntimos (ADR-0007)
     currency         TEXT NOT NULL DEFAULT 'EUR',
     expires_at       TEXT,                             -- ISO datetime o NULL
     last_activity_at TEXT,                             -- ISO datetime o NULL
@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS cart_checkout_item (
     product_name       TEXT NOT NULL,
     sku                TEXT NOT NULL DEFAULT '',
     quantity           INTEGER NOT NULL DEFAULT 1,
-    unit_price         NUMERIC NOT NULL DEFAULT 0,
-    line_total         NUMERIC NOT NULL DEFAULT 0,
+    unit_price         INTEGER NOT NULL DEFAULT 0,  -- céntimos
+    line_total         INTEGER NOT NULL DEFAULT 0,  -- céntimos
     variant_attributes TEXT NOT NULL DEFAULT '{}',     -- JSON libre
     is_deleted         INTEGER NOT NULL DEFAULT 0,
     deleted_at         TEXT,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS cart_checkout_session (
     placed_at        TEXT,
     paid_at          TEXT,
     completed_at     TEXT,
-    total_amount     NUMERIC NOT NULL DEFAULT 0,
+    total_amount     INTEGER NOT NULL DEFAULT 0,  -- céntimos (ADR-0007)
     notes            TEXT NOT NULL DEFAULT '',
     is_deleted       INTEGER NOT NULL DEFAULT 0,
     deleted_at       TEXT,

@@ -72,17 +72,30 @@ fn to_fn_result(r: Result<Output, String>) -> FnResult<Json<Output>> {
 
 // ── Helpers (mismo estilo que kitchen-handler / sales-handler) ─────────────
 
-/// Redondeo a 2 decimales half-even (igual que Decimal.quantize de Python).
-fn round2(x: f64) -> f64 {
-    let scaled = x * 100.0;
-    let floor = scaled.floor();
-    let diff = scaled - floor;
-    let rounded = if (diff - 0.5).abs() < 1e-9 {
+/// Redondea céntimos fraccionarios a céntimos enteros half-even (ADR-0007). `x` ya en
+/// el espacio de céntimos.
+fn round_cents(x: f64) -> i64 {
+    let floor = x.floor();
+    let diff = x - floor;
+    let r = if (diff - 0.5).abs() < 1e-9 {
         if (floor as i64) % 2 == 0 { floor } else { floor + 1.0 }
     } else {
-        scaled.round()
+        x.round()
     };
-    rounded / 100.0
+    r as i64
+}
+
+/// Lee un importe **en céntimos** (`i64`) del payload: entero, string de entero, o
+/// (robustez) decimal interpretado como céntimos ya escalados. El contrato es céntimos.
+fn cents(v: &Value) -> Option<i64> {
+    match v {
+        Value::Number(n) => n.as_i64().or_else(|| n.as_f64().filter(|f| f.is_finite()).map(round_cents)),
+        Value::String(s) => {
+            let s = s.trim();
+            s.parse::<i64>().ok().or_else(|| s.parse::<f64>().ok().filter(|f| f.is_finite()).map(round_cents))
+        }
+        _ => None,
+    }
 }
 
 fn as_str(v: &Value) -> String {
@@ -119,16 +132,6 @@ fn parse_int(v: &Value) -> Option<i64> {
     }
 }
 
-/// Decimal (Number o String parseable). `None` si no lo es o no es finito.
-fn parse_decimal(v: &Value) -> Option<f64> {
-    let f = match v {
-        Value::Number(n) => n.as_f64()?,
-        Value::String(s) => s.trim().parse::<f64>().ok()?,
-        _ => return None,
-    };
-    if f.is_finite() { Some(f) } else { None }
-}
-
 /// Campo JSON libre (variant_attributes, direcciones): objeto/array → string JSON;
 /// string → tal cual; ausente/null → `default`.
 fn json_text(p: &Value, k: &str, default: &str) -> String {
@@ -139,10 +142,6 @@ fn json_text(p: &Value, k: &str, default: &str) -> String {
         Some(Value::String(s)) if !s.trim().is_empty() => s.clone(),
         _ => default.to_string(),
     }
-}
-
-fn num(x: f64) -> Value {
-    json!(round2(x))
 }
 
 /// `YYYYMMDD` a partir del `context.now` RFC3339 del host.
@@ -207,11 +206,10 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
     let quantity = parse_int(payload.get("quantity").unwrap_or(&Value::Null))
         .filter(|q| *q > 0)
         .ok_or_else(|| "invalid_quantity: debe ser un entero > 0".to_string())?;
-    let unit_price = parse_decimal(payload.get("unit_price").unwrap_or(&Value::Null))
-        .filter(|p| *p >= 0.0)
-        .ok_or_else(|| "invalid_price: debe ser un decimal >= 0".to_string())?;
-    let unit_price = round2(unit_price);
-    let line_total = round2(unit_price * quantity as f64);
+    let unit_price = cents(payload.get("unit_price").unwrap_or(&Value::Null)) // céntimos
+        .filter(|p| *p >= 0)
+        .ok_or_else(|| "invalid_price: debe ser céntimos >= 0".to_string())?;
+    let line_total = round_cents(unit_price as f64 * quantity as f64); // céntimos
 
     let item_id = ctx.new_ids.first().cloned().unwrap_or_default();
     if item_id.is_empty() {
@@ -226,8 +224,8 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
     ins.insert("product_name".into(), json!(product_name));
     ins.insert("sku".into(), json!(str_or(&payload, "sku", "")));
     ins.insert("quantity".into(), json!(quantity));
-    ins.insert("unit_price".into(), num(unit_price));
-    ins.insert("line_total".into(), num(line_total));
+    ins.insert("unit_price".into(), json!(unit_price)); // céntimos
+    ins.insert("line_total".into(), json!(line_total)); // céntimos
     ins.insert("variant_attributes".into(), json!(json_text(&payload, "variant_attributes", "{}")));
 
     let mut recalc = Map::new();
@@ -238,7 +236,7 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
     ev.insert("session_token".into(), json!(session_token));
     ev.insert("product_ref".into(), json!(product_ref));
     ev.insert("quantity".into(), json!(quantity));
-    ev.insert("line_total".into(), num(line_total));
+    ev.insert("line_total".into(), json!(line_total)); // céntimos
 
     Ok(Output {
         operations: vec![
