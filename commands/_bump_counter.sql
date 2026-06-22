@@ -3,4 +3,4 @@
 -- aporta el handler WASM. Mismo patrón que sales/kitchen._bump_counter.
 INSERT INTO cart_checkout_order_counter (id, hub_id, day, last_number)
 VALUES (:new_id, :hub_id, :day, 1)
-ON CONFLICT (hub_id, day) DO UPDATE SET last_number = last_number + 1;
+ON CONFLICT (hub_id, day) DO UPDATE SET last_number = cart_checkout_order_counter.last_number + 1;
