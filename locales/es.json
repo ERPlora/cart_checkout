@@ -1,0 +1,11 @@
+{
+  "name": "Carrito y pago",
+  "navigation": {
+    "carts": {
+      "label": "Carritos"
+    },
+    "orders": {
+      "label": "Pedidos"
+    }
+  }
+}

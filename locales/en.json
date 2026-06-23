@@ -1,0 +1,11 @@
+{
+  "name": "Cart & Checkout",
+  "navigation": {
+    "carts": {
+      "label": "Carts"
+    },
+    "orders": {
+      "label": "Orders"
+    }
+  }
+}
