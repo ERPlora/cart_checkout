@@ -9,7 +9,7 @@ var __decorateClass = (decorators, target, key, kind) => {
   return result;
 };
 
-// node_modules/@lit-labs/ssr-dom-shim/lib/element-internals.js
+// node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/element-internals.js
 var ElementInternalsShim = class ElementInternals {
   get shadowRoot() {
     return this.__host.__shadowRoot;
@@ -88,7 +88,7 @@ var ElementInternalsShim = class ElementInternals {
   }
 };
 
-// node_modules/@lit-labs/ssr-dom-shim/lib/events.js
+// node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/events.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f3) {
   if (kind === "m") throw new TypeError("Private method is not writable");
   if (kind === "a" && !f3) throw new TypeError("Private accessor was defined without a setter");
@@ -246,7 +246,7 @@ Object.defineProperties(CustomEventShim.prototype, {
 var EventShimWithRealType = EventShim;
 var CustomEventShimWithRealType = CustomEventShim;
 
-// node_modules/@lit-labs/ssr-dom-shim/lib/css.js
+// node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/css.js
 var _a2;
 var CSSRuleShim = (_a2 = class CSSRule {
   constructor() {
@@ -277,7 +277,7 @@ var CSSRuleShim = (_a2 = class CSSRule {
   }
 }, _a2.STYLE_RULE = 1, _a2.CHARSET_RULE = 2, _a2.IMPORT_RULE = 3, _a2.MEDIA_RULE = 4, _a2.FONT_FACE_RULE = 5, _a2.PAGE_RULE = 6, _a2.NAMESPACE_RULE = 10, _a2.KEYFRAMES_RULE = 7, _a2.KEYFRAME_RULE = 8, _a2.SUPPORTS_RULE = 12, _a2.COUNTER_STYLE_RULE = 11, _a2.FONT_FEATURE_VALUES_RULE = 14, _a2.MARGIN_RULE = 9, _a2);
 
-// node_modules/@lit-labs/ssr-dom-shim/index.js
+// node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/index.js
 globalThis.Event ??= EventShimWithRealType;
 globalThis.CustomEvent ??= CustomEventShimWithRealType;
 var constructionToken = Symbol();
@@ -674,7 +674,7 @@ var CustomElementRegistryShimWithRealType = CustomElementRegistry;
 var customElements2 = new CustomElementRegistryShimWithRealType();
 var windowShim = new WindowShim(constructionToken);
 
-// node_modules/@lit/reactive-element/node/css-tag.js
+// node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/css-tag.js
 var t = globalThis;
 var e = t.ShadowRoot && (void 0 === t.ShadyCSS || t.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype;
 var s = Symbol();
@@ -719,7 +719,7 @@ var c = e || void 0 === t.CSSStyleSheet ? (t5) => t5 : (t5) => t5 instanceof CSS
   return r(e5);
 })(t5) : t5;
 
-// node_modules/@lit/reactive-element/node/reactive-element.js
+// node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/reactive-element.js
 var { is: h, defineProperty: r2, getOwnPropertyDescriptor: o2, getOwnPropertyNames: n2, getOwnPropertySymbols: a, getPrototypeOf: c2 } = Object;
 var l = globalThis;
 l.customElements ??= customElements2;
@@ -942,7 +942,7 @@ var g = class extends (globalThis.HTMLElement ?? HTMLElementShimWithRealType) {
 };
 g.elementStyles = [], g.shadowRootOptions = { mode: "open" }, g[f("elementProperties")] = /* @__PURE__ */ new Map(), g[f("finalized")] = /* @__PURE__ */ new Map(), u?.({ ReactiveElement: g }), (l.reactiveElementVersions ??= []).push("2.1.2");
 
-// node_modules/lit-html/lit-html.js
+// node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/lit-html.js
 var t2 = globalThis;
 var i2 = (t5) => t5;
 var s2 = t2.trustedTypes;
@@ -1197,7 +1197,7 @@ var D = (t5, i7, s5) => {
   return h4._$AI(t5), h4;
 };
 
-// node_modules/lit-element/lit-element.js
+// node_modules/.pnpm/lit-element@4.2.2/node_modules/lit-element/lit-element.js
 var s3 = globalThis;
 var i3 = class extends g {
   constructor() {
@@ -1226,7 +1226,7 @@ var o4 = s3.litElementPolyfillSupport;
 o4?.({ LitElement: i3 });
 (s3.litElementVersions ??= []).push("4.2.2");
 
-// node_modules/@lit/reactive-element/node/decorators/property.js
+// node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/decorators/property.js
 var o5 = { attribute: true, type: String, converter: b, reflect: false, hasChanged: m };
 var r4 = (t5 = o5, e5, r6) => {
   const { kind: n6, metadata: i7 } = r6;
@@ -1256,19 +1256,19 @@ function n4(t5) {
   })(t5, e5, o7);
 }
 
-// node_modules/@lit/reactive-element/node/decorators/state.js
+// node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/decorators/state.js
 function r5(r6) {
   return n4({ ...r6, state: true, attribute: false });
 }
 
-// ../outfitkit/dist/define.js
+// node_modules/.pnpm/@outfitkit+core@file+..+outfitkit/node_modules/@outfitkit/core/dist/define.js
 function define(tag, ctor) {
   if (typeof customElements !== "undefined" && !customElements.get(tag)) {
     customElements.define(tag, ctor);
   }
 }
 
-// node_modules/lit-html/directive.js
+// node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directive.js
 var t3 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
 var e4 = (t5) => (...e5) => ({ _$litDirective$: t5, values: e5 });
 var i4 = class {
@@ -1288,7 +1288,7 @@ var i4 = class {
   }
 };
 
-// node_modules/lit-html/directive-helpers.js
+// node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directive-helpers.js
 var { I: t4 } = j;
 var i5 = (o7) => o7;
 var s4 = () => document.createComment("");
@@ -1321,7 +1321,7 @@ var h3 = (o7) => {
   o7._$AR(), o7._$AA.remove();
 };
 
-// node_modules/lit-html/directives/repeat.js
+// node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directives/repeat.js
 var u4 = (e5, s5, t5) => {
   const r6 = /* @__PURE__ */ new Map();
   for (let l3 = s5; l3 <= t5; l3++) r6.set(e5[l3], l3);
@@ -1374,7 +1374,7 @@ var c4 = e4(class extends i4 {
   }
 });
 
-// node_modules/lit-html/directives/style-map.js
+// node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directives/style-map.js
 var n5 = "important";
 var i6 = " !" + n5;
 var o6 = e4(class extends i4 {
@@ -1403,7 +1403,7 @@ var o6 = e4(class extends i4 {
   }
 });
 
-// ../outfitkit/dist/ok-data-table.js
+// node_modules/.pnpm/@outfitkit+core@file+..+outfitkit/node_modules/@outfitkit/core/dist/ok-data-table.js
 var __defProp2 = Object.defineProperty;
 var __decorateClass2 = (decorators, target, key, kind) => {
   var result = void 0;
@@ -2681,7 +2681,7 @@ __decorateClass2([
 ], OkDataTable.prototype, "menuOpen");
 define("ok-data-table", OkDataTable);
 
-// ../hub/packages/module-sdk/src/index.ts
+// node_modules/.pnpm/@erplora+module-sdk@file+..+hub+packages+module-sdk/node_modules/@erplora/module-sdk/src/index.ts
 function isEmpty(v3) {
   return v3 === null || v3 === void 0 || v3 === "";
 }
@@ -2799,7 +2799,7 @@ function createListController(client, queryName, onChange = () => {
   return new ListController(client, queryName, onChange, opts);
 }
 
-// ../modules-workspace/modules/cart_checkout/locales/es.json
+// modules/cart_checkout/locales/es.json
 var es_default = {
   name: "Carrito y pago",
   navigation: {
@@ -2833,9 +2833,10 @@ var es_default = {
     actionMarkPaid: "Marcar pagado",
     actionComplete: "Completar",
     actionFail: "Fallar",
-    placeholderSessionToken: "Session token",
-    placeholderEmailOptional: "Email (opcional)",
-    placeholderNameOptional: "Nombre (opcional)",
+    labelName: "Nombre",
+    placeholderSessionToken: "sess_a1b2c3",
+    placeholderEmailOptional: "cliente@ejemplo.com",
+    placeholderNameOptional: "Ana Garc\xEDa",
     buttonSaving: "Guardando\u2026",
     buttonNewCart: "Nuevo carrito",
     searchCarts: "Buscar sesi\xF3n o email\u2026",
@@ -2848,7 +2849,7 @@ var es_default = {
   }
 };
 
-// ../modules-workspace/modules/cart_checkout/locales/en.json
+// modules/cart_checkout/locales/en.json
 var en_default = {
   name: "Cart & Checkout",
   navigation: {
@@ -2882,9 +2883,10 @@ var en_default = {
     actionMarkPaid: "Mark paid",
     actionComplete: "Complete",
     actionFail: "Fail",
-    placeholderSessionToken: "Session token",
-    placeholderEmailOptional: "Email (optional)",
-    placeholderNameOptional: "Name (optional)",
+    labelName: "Name",
+    placeholderSessionToken: "sess_a1b2c3",
+    placeholderEmailOptional: "customer@example.com",
+    placeholderNameOptional: "John Doe",
     buttonSaving: "Saving\u2026",
     buttonNewCart: "New cart",
     searchCarts: "Search session or email\u2026",
@@ -2897,7 +2899,7 @@ var en_default = {
   }
 };
 
-// ../modules-workspace/modules/cart_checkout/ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
+// modules/cart_checkout/ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
 var CATALOG = { es: es_default, en: en_default };
 var STATUS_KEYS = {
   active: "ui.statusActive",
@@ -2929,8 +2931,8 @@ var ErpCartCheckoutCarts = class extends i3 {
     :host { display:block; font-family: system-ui, sans-serif; color: var(--ink, #1c1b18); }
     header { display:flex; gap:.5rem; align-items:center; margin-bottom:.75rem; }
     h2 { margin:0; font-size:1.15rem; flex:1; }
-    .form { display:flex; gap:.5rem; flex-wrap:wrap; align-items:end; margin:.5rem 0 1rem; }
-    .form ion-input, .form ion-select { --background:var(--surface-2,#f7f4ec); border:1px solid var(--line,#e7e2d6); border-radius:8px; min-width:8rem; }
+    .form { display:flex; gap:.75rem; flex-wrap:wrap; align-items:end; margin:.5rem 0 1.25rem; }
+    .form ion-input, .form ion-select { flex:1 1 11rem; min-width:9rem; }
     .err { color:#d9480f; font-weight:600; }
   `;
   }
@@ -3037,9 +3039,9 @@ var ErpCartCheckoutCarts = class extends i3 {
           <h2>${t5("ui.cartsTitle")}</h2>
         </header>
         <form class="form" @submit=${(e5) => this.createCart(e5)}>
-          <ion-input placeholder=${t5("ui.placeholderSessionToken")} .value=${this.newToken} @ionInput=${(e5) => this.newToken = e5.target.value}></ion-input>
-          <ion-input placeholder=${t5("ui.placeholderEmailOptional")} .value=${this.newEmail} @ionInput=${(e5) => this.newEmail = e5.target.value}></ion-input>
-          <ion-input placeholder=${t5("ui.placeholderNameOptional")} .value=${this.newName} @ionInput=${(e5) => this.newName = e5.target.value}></ion-input>
+          <ion-input fill="outline" label-placement="floating" label=${t5("ui.colSession")} placeholder=${t5("ui.placeholderSessionToken")} .value=${this.newToken} @ionInput=${(e5) => this.newToken = e5.target.value}></ion-input>
+          <ion-input fill="outline" label-placement="floating" label=${t5("ui.colEmail")} placeholder=${t5("ui.placeholderEmailOptional")} .value=${this.newEmail} @ionInput=${(e5) => this.newEmail = e5.target.value}></ion-input>
+          <ion-input fill="outline" label-placement="floating" label=${t5("ui.labelName")} placeholder=${t5("ui.placeholderNameOptional")} .value=${this.newName} @ionInput=${(e5) => this.newName = e5.target.value}></ion-input>
           <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t5("ui.buttonSaving") : t5("ui.buttonNewCart")}</ion-button>
         </form>
         ${this.formError ? b2`<p class="err">${this.formError}</p>` : A}
@@ -3068,7 +3070,7 @@ __decorateClass([
 ], ErpCartCheckoutCarts.prototype, "tick", 2);
 define("erp-cart-checkout-carts", ErpCartCheckoutCarts);
 
-// ../modules-workspace/modules/cart_checkout/ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
+// modules/cart_checkout/ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
 var CATALOG2 = { es: es_default, en: en_default };
 var STATUS_KEYS2 = {
   initiated: "ui.statusInitiated",
