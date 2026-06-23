@@ -9,7 +9,7 @@ var __decorateClass = (decorators, target, key, kind) => {
   return result;
 };
 
-// ../../node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/element-internals.js
+// node_modules/@lit-labs/ssr-dom-shim/lib/element-internals.js
 var ElementInternalsShim = class ElementInternals {
   get shadowRoot() {
     return this.__host.__shadowRoot;
@@ -88,7 +88,7 @@ var ElementInternalsShim = class ElementInternals {
   }
 };
 
-// ../../node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/events.js
+// node_modules/@lit-labs/ssr-dom-shim/lib/events.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f3) {
   if (kind === "m") throw new TypeError("Private method is not writable");
   if (kind === "a" && !f3) throw new TypeError("Private accessor was defined without a setter");
@@ -246,7 +246,7 @@ Object.defineProperties(CustomEventShim.prototype, {
 var EventShimWithRealType = EventShim;
 var CustomEventShimWithRealType = CustomEventShim;
 
-// ../../node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/lib/css.js
+// node_modules/@lit-labs/ssr-dom-shim/lib/css.js
 var _a2;
 var CSSRuleShim = (_a2 = class CSSRule {
   constructor() {
@@ -277,7 +277,7 @@ var CSSRuleShim = (_a2 = class CSSRule {
   }
 }, _a2.STYLE_RULE = 1, _a2.CHARSET_RULE = 2, _a2.IMPORT_RULE = 3, _a2.MEDIA_RULE = 4, _a2.FONT_FACE_RULE = 5, _a2.PAGE_RULE = 6, _a2.NAMESPACE_RULE = 10, _a2.KEYFRAMES_RULE = 7, _a2.KEYFRAME_RULE = 8, _a2.SUPPORTS_RULE = 12, _a2.COUNTER_STYLE_RULE = 11, _a2.FONT_FEATURE_VALUES_RULE = 14, _a2.MARGIN_RULE = 9, _a2);
 
-// ../../node_modules/.pnpm/@lit-labs+ssr-dom-shim@1.6.0/node_modules/@lit-labs/ssr-dom-shim/index.js
+// node_modules/@lit-labs/ssr-dom-shim/index.js
 globalThis.Event ??= EventShimWithRealType;
 globalThis.CustomEvent ??= CustomEventShimWithRealType;
 var constructionToken = Symbol();
@@ -674,7 +674,7 @@ var CustomElementRegistryShimWithRealType = CustomElementRegistry;
 var customElements2 = new CustomElementRegistryShimWithRealType();
 var windowShim = new WindowShim(constructionToken);
 
-// ../../node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/css-tag.js
+// node_modules/@lit/reactive-element/node/css-tag.js
 var t = globalThis;
 var e = t.ShadowRoot && (void 0 === t.ShadyCSS || t.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype;
 var s = Symbol();
@@ -719,7 +719,7 @@ var c = e || void 0 === t.CSSStyleSheet ? (t5) => t5 : (t5) => t5 instanceof CSS
   return r(e5);
 })(t5) : t5;
 
-// ../../node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/reactive-element.js
+// node_modules/@lit/reactive-element/node/reactive-element.js
 var { is: h, defineProperty: r2, getOwnPropertyDescriptor: o2, getOwnPropertyNames: n2, getOwnPropertySymbols: a, getPrototypeOf: c2 } = Object;
 var l = globalThis;
 l.customElements ??= customElements2;
@@ -942,7 +942,7 @@ var g = class extends (globalThis.HTMLElement ?? HTMLElementShimWithRealType) {
 };
 g.elementStyles = [], g.shadowRootOptions = { mode: "open" }, g[f("elementProperties")] = /* @__PURE__ */ new Map(), g[f("finalized")] = /* @__PURE__ */ new Map(), u?.({ ReactiveElement: g }), (l.reactiveElementVersions ??= []).push("2.1.2");
 
-// ../../node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/lit-html.js
+// node_modules/lit-html/lit-html.js
 var t2 = globalThis;
 var i2 = (t5) => t5;
 var s2 = t2.trustedTypes;
@@ -1197,7 +1197,7 @@ var D = (t5, i7, s5) => {
   return h4._$AI(t5), h4;
 };
 
-// ../../node_modules/.pnpm/lit-element@4.2.2/node_modules/lit-element/lit-element.js
+// node_modules/lit-element/lit-element.js
 var s3 = globalThis;
 var i3 = class extends g {
   constructor() {
@@ -1226,7 +1226,7 @@ var o4 = s3.litElementPolyfillSupport;
 o4?.({ LitElement: i3 });
 (s3.litElementVersions ??= []).push("4.2.2");
 
-// ../../node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/decorators/property.js
+// node_modules/@lit/reactive-element/node/decorators/property.js
 var o5 = { attribute: true, type: String, converter: b, reflect: false, hasChanged: m };
 var r4 = (t5 = o5, e5, r6) => {
   const { kind: n6, metadata: i7 } = r6;
@@ -1256,19 +1256,19 @@ function n4(t5) {
   })(t5, e5, o7);
 }
 
-// ../../node_modules/.pnpm/@lit+reactive-element@2.1.2/node_modules/@lit/reactive-element/node/decorators/state.js
+// node_modules/@lit/reactive-element/node/decorators/state.js
 function r5(r6) {
   return n4({ ...r6, state: true, attribute: false });
 }
 
-// ../../node_modules/.pnpm/@outfitkit+core@file+..+outfitkit/node_modules/@outfitkit/core/dist/define.js
+// ../outfitkit/dist/define.js
 function define(tag, ctor) {
   if (typeof customElements !== "undefined" && !customElements.get(tag)) {
     customElements.define(tag, ctor);
   }
 }
 
-// ../../node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directive.js
+// node_modules/lit-html/directive.js
 var t3 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
 var e4 = (t5) => (...e5) => ({ _$litDirective$: t5, values: e5 });
 var i4 = class {
@@ -1288,7 +1288,7 @@ var i4 = class {
   }
 };
 
-// ../../node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directive-helpers.js
+// node_modules/lit-html/directive-helpers.js
 var { I: t4 } = j;
 var i5 = (o7) => o7;
 var s4 = () => document.createComment("");
@@ -1321,7 +1321,7 @@ var h3 = (o7) => {
   o7._$AR(), o7._$AA.remove();
 };
 
-// ../../node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directives/repeat.js
+// node_modules/lit-html/directives/repeat.js
 var u4 = (e5, s5, t5) => {
   const r6 = /* @__PURE__ */ new Map();
   for (let l3 = s5; l3 <= t5; l3++) r6.set(e5[l3], l3);
@@ -1374,7 +1374,7 @@ var c4 = e4(class extends i4 {
   }
 });
 
-// ../../node_modules/.pnpm/lit-html@3.3.3/node_modules/lit-html/directives/style-map.js
+// node_modules/lit-html/directives/style-map.js
 var n5 = "important";
 var i6 = " !" + n5;
 var o6 = e4(class extends i4 {
@@ -1403,7 +1403,7 @@ var o6 = e4(class extends i4 {
   }
 });
 
-// ../../node_modules/.pnpm/@outfitkit+core@file+..+outfitkit/node_modules/@outfitkit/core/dist/ok-data-table.js
+// ../outfitkit/dist/ok-data-table.js
 var __defProp2 = Object.defineProperty;
 var __decorateClass2 = (decorators, target, key, kind) => {
   var result = void 0;
@@ -1571,12 +1571,15 @@ var OkDataTable = class extends i3 {
 
     /* ── Topbar / cabecera (relieve) ─────────────────────────────────────────────────────── */
     .bar { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--header-background); }
-    /* Toolbar CONSOLIDADA: TODOS los controles (buscador, filtros, page-size, vistas, columnas,
-     * CSV, ⋮, alta) son hijos directos de UNA sola fila flex que envuelve ELEMENTO A ELEMENTO
-     * (no por bloques): caben en una línea → una línea; los que no caben bajan a la(s) línea(s)
-     * que hagan falta. El cluster derecho se empuja al borde con .tk-spacer (hueco flexible)
-     * solo cuando todo cabe en una línea; al envolver, el spacer se oculta y todo se apila a la
-     * izquierda. */
+    /* Toolbar CONSOLIDADA: TODOS los controles son hijos directos de UNA sola fila flex que
+     * envuelve ELEMENTO A ELEMENTO (no por bloques): caben en una línea → una línea; los que no
+     * caben bajan a la(s) línea(s) que hagan falta. El cluster derecho se empuja al borde con
+     * .tk-spacer (hueco flexible) solo cuando todo cabe en una línea; al envolver, el spacer se
+     * oculta y todo se apila a la izquierda.
+     * ORDEN CANÓNICO (2026-06-22, izquierda→derecha): [buscador] · [filtros en línea] · ‹spacer› ·
+     * [SELECTORES: columnas → filas/página] · [BOTONES: vistas → filtros(funnel) → import → export →
+     * alta → ⋮ → acción primaria]. Es decir: buscador al inicio, filtros en medio, y al final los
+     * selectores (columnas, luego «N por página») seguidos de los botones de acción. */
     .bar-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .bar-main > ion-button { --padding-start: 0.5rem; --padding-end: 0.5rem; margin: 0; }
     /* Spacer que absorbe el hueco libre en pantallas anchas (empuja el cluster derecho al borde).
@@ -2287,6 +2290,19 @@ var OkDataTable = class extends i3 {
                   ${this.hasSearch ? b2`<div class="search">${searchbar}</div>` : A}
                   ${this.inlineFilters ? this.renderInlineFilters() : A}
                   <span class="tk-spacer"></span>
+                    ${this.effColumnPicker ? b2`
+                          <ion-select
+                            class="tk-cols"
+                            multiple
+                            interface="popover"
+                            aria-label=${this.t.columnsVisible}
+                            .value=${this.visibleColumns.map((c5) => c5.key)}
+                            .selectedText=${this.t.columns}
+                            @ionChange=${(e5) => this.setVisibleColumns(e5.detail.value)}
+                          >
+                            ${this.columns.map((c5) => b2`<ion-select-option value=${c5.key}>${c5.header}</ion-select-option>`)}
+                          </ion-select>
+                        ` : A}
                     ${this.effPageSizes.length ? b2`
                           <ion-select
                             class="tk-psize"
@@ -2303,19 +2319,6 @@ var OkDataTable = class extends i3 {
                             ${this.toolButton("list-outline", this.viewMode === "table", () => this.setViewMode("table"), this.t.viewList)}
                             ${this.toolButton("grid-outline", this.viewMode === "cards", () => this.setViewMode("cards"), this.t.viewCards)}
                           </span>
-                        ` : A}
-                    ${this.effColumnPicker ? b2`
-                          <ion-select
-                            class="tk-cols"
-                            multiple
-                            interface="popover"
-                            aria-label=${this.t.columnsVisible}
-                            .value=${this.visibleColumns.map((c5) => c5.key)}
-                            .selectedText=${this.t.columns}
-                            @ionChange=${(e5) => this.setVisibleColumns(e5.detail.value)}
-                          >
-                            ${this.columns.map((c5) => b2`<ion-select-option value=${c5.key}>${c5.header}</ion-select-option>`)}
-                          </ion-select>
                         ` : A}
                     ${this.hasFilterRow && !this.inlineFilters ? this.toolButton("funnel-outline", this.panel === "filters" || this.activeFilterCount > 0, () => this.toggle("filters"), this.t.filters, this.serverSide ? void 0 : this.activeFilterCount) : A}
                     ${this.effImport ? b2`
@@ -2678,7 +2681,7 @@ __decorateClass2([
 ], OkDataTable.prototype, "menuOpen");
 define("ok-data-table", OkDataTable);
 
-// ../../node_modules/.pnpm/@erplora+module-sdk@file+..+hub+packages+module-sdk/node_modules/@erplora/module-sdk/src/index.ts
+// ../hub/packages/module-sdk/src/index.ts
 function isEmpty(v3) {
   return v3 === null || v3 === void 0 || v3 === "";
 }
@@ -2796,12 +2799,111 @@ function createListController(client, queryName, onChange = () => {
   return new ListController(client, queryName, onChange, opts);
 }
 
-// ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
-var STATUS_LABELS = {
-  active: "Active",
-  abandoned: "Abandoned",
-  converted: "Converted",
-  expired: "Expired"
+// ../modules-workspace/modules/cart_checkout/locales/es.json
+var es_default = {
+  name: "Carrito y pago",
+  navigation: {
+    carts: {
+      label: "Carritos"
+    },
+    orders: {
+      label: "Pedidos"
+    }
+  },
+  ui: {
+    cartsTitle: "Carritos",
+    ordersTitle: "Pedidos",
+    colSession: "Sesi\xF3n",
+    colEmail: "Email",
+    colStatus: "Estado",
+    colItems: "\xCDtems",
+    colTotal: "Total",
+    colOrder: "Pedido",
+    colPayment: "Pago",
+    statusActive: "Activo",
+    statusAbandoned: "Abandonado",
+    statusConverted: "Convertido",
+    statusExpired: "Expirado",
+    statusInitiated: "Iniciado",
+    statusPaid: "Pagado",
+    statusFailed: "Fallido",
+    statusCompleted: "Completado",
+    actionAbandon: "Abandonar",
+    actionDelete: "Borrar",
+    actionMarkPaid: "Marcar pagado",
+    actionComplete: "Completar",
+    actionFail: "Fallar",
+    placeholderSessionToken: "Session token",
+    placeholderEmailOptional: "Email (opcional)",
+    placeholderNameOptional: "Nombre (opcional)",
+    buttonSaving: "Guardando\u2026",
+    buttonNewCart: "Nuevo carrito",
+    searchCarts: "Buscar sesi\xF3n o email\u2026",
+    searchOrders: "Buscar pedido o email\u2026",
+    loading: "Cargando\u2026",
+    emptyCarts: "Sin carritos.",
+    emptyOrders: "Sin pedidos.",
+    errorCreateCart: "No se pudo crear el carrito",
+    errorActionFailed: "No se pudo completar la acci\xF3n"
+  }
+};
+
+// ../modules-workspace/modules/cart_checkout/locales/en.json
+var en_default = {
+  name: "Cart & Checkout",
+  navigation: {
+    carts: {
+      label: "Carts"
+    },
+    orders: {
+      label: "Orders"
+    }
+  },
+  ui: {
+    cartsTitle: "Carts",
+    ordersTitle: "Orders",
+    colSession: "Session",
+    colEmail: "Email",
+    colStatus: "Status",
+    colItems: "Items",
+    colTotal: "Total",
+    colOrder: "Order",
+    colPayment: "Payment",
+    statusActive: "Active",
+    statusAbandoned: "Abandoned",
+    statusConverted: "Converted",
+    statusExpired: "Expired",
+    statusInitiated: "Initiated",
+    statusPaid: "Paid",
+    statusFailed: "Failed",
+    statusCompleted: "Completed",
+    actionAbandon: "Abandon",
+    actionDelete: "Delete",
+    actionMarkPaid: "Mark paid",
+    actionComplete: "Complete",
+    actionFail: "Fail",
+    placeholderSessionToken: "Session token",
+    placeholderEmailOptional: "Email (optional)",
+    placeholderNameOptional: "Name (optional)",
+    buttonSaving: "Saving\u2026",
+    buttonNewCart: "New cart",
+    searchCarts: "Search session or email\u2026",
+    searchOrders: "Search order or email\u2026",
+    loading: "Loading\u2026",
+    emptyCarts: "No carts.",
+    emptyOrders: "No orders.",
+    errorCreateCart: "Could not create the cart",
+    errorActionFailed: "Could not complete the action"
+  }
+};
+
+// ../modules-workspace/modules/cart_checkout/ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
+var CATALOG = { es: es_default, en: en_default };
+var STATUS_KEYS = {
+  active: "ui.statusActive",
+  abandoned: "ui.statusAbandoned",
+  converted: "ui.statusConverted",
+  expired: "ui.statusExpired"
 };
 function erplora() {
   const c5 = globalThis.erplora;
@@ -2817,25 +2919,10 @@ var ErpCartCheckoutCarts = class extends i3 {
     this.newName = "";
     this.saving = false;
     this.tick = 0;
-    this.columns = [
-      { key: "session_token", header: "Sesi\xF3n", sortable: true, filterable: true, filterType: "text" },
-      { key: "customer_email", header: "Email", sortable: true, filterable: true, filterType: "text", format: (r6) => r6.customer_email || "\u2014" },
-      {
-        key: "status",
-        header: "Estado",
-        sortable: true,
-        filterable: true,
-        filterType: "select",
-        options: Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-        format: (r6) => STATUS_LABELS[r6.status] ?? r6.status
-      },
-      { key: "total_items", header: "\xCDtems", align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => String(r6.total_items ?? 0) },
-      { key: "total_amount", header: "Total", align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => `${Number(r6.total_amount).toFixed(2)} ${r6.currency || "EUR"}` }
-    ];
-    this.actions = [
-      { id: "abandon", label: "Abandonar", icon: "close-circle-outline", color: "warning" },
-      { id: "delete", label: "Borrar", icon: "trash-outline", color: "danger" }
-    ];
+    // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
+    // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
+    // sola vez tras el primer render, considera firstUpdated() en su lugar.
+    this.onLocaleChange = () => this.requestUpdate();
   }
   static {
     this.styles = i`
@@ -2847,11 +2934,36 @@ var ErpCartCheckoutCarts = class extends i3 {
     .err { color:#d9480f; font-weight:600; }
   `;
   }
-  // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
-  // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
-  // sola vez tras el primer render, considera firstUpdated() en su lugar.
+  // Getters (no campos): se re-evalúan en cada render, así los textos cambian con el idioma activo
+  // (ADR-0055). `connectedCallback` re-renderiza al recibir `erplora:locale-changed`.
+  get columns() {
+    const t5 = (k2) => erplora().t(CATALOG, k2);
+    return [
+      { key: "session_token", header: t5("ui.colSession"), sortable: true, filterable: true, filterType: "text" },
+      { key: "customer_email", header: t5("ui.colEmail"), sortable: true, filterable: true, filterType: "text", format: (r6) => r6.customer_email || "\u2014" },
+      {
+        key: "status",
+        header: t5("ui.colStatus"),
+        sortable: true,
+        filterable: true,
+        filterType: "select",
+        options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t5(key) })),
+        format: (r6) => STATUS_KEYS[r6.status] ? t5(STATUS_KEYS[r6.status]) : r6.status
+      },
+      { key: "total_items", header: t5("ui.colItems"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => String(r6.total_items ?? 0) },
+      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => `${Number(r6.total_amount).toFixed(2)} ${r6.currency || "EUR"}` }
+    ];
+  }
+  get actions() {
+    const t5 = (k2) => erplora().t(CATALOG, k2);
+    return [
+      { id: "abandon", label: t5("ui.actionAbandon"), icon: "close-circle-outline", color: "warning" },
+      { id: "delete", label: t5("ui.actionDelete"), icon: "trash-outline", color: "danger" }
+    ];
+  }
   async connectedCallback() {
     super.connectedCallback();
+    window.addEventListener("erplora:locale-changed", this.onLocaleChange);
     this.ctrl = createListController(erplora(), "cart_checkout.carts.list", () => this.requestUpdate(), {
       pageSize: 50,
       sort: "created_at",
@@ -2876,6 +2988,7 @@ var ErpCartCheckoutCarts = class extends i3 {
     }
   }
   disconnectedCallback() {
+    window.removeEventListener("erplora:locale-changed", this.onLocaleChange);
     super.disconnectedCallback();
     this.unsub?.();
   }
@@ -2897,7 +3010,7 @@ var ErpCartCheckoutCarts = class extends i3 {
       this.newName = "";
       await this.ctrl.load();
     } catch (e5) {
-      this.formError = e5 instanceof Error ? e5.message : "No se pudo crear el carrito";
+      this.formError = e5 instanceof Error ? e5.message : erplora().t(CATALOG, "ui.errorCreateCart");
     } finally {
       this.saving = false;
     }
@@ -2914,23 +3027,24 @@ var ErpCartCheckoutCarts = class extends i3 {
       }
       await this.ctrl.load();
     } catch (e5) {
-      this.formError = e5 instanceof Error ? e5.message : "No se pudo completar la acci\xF3n";
+      this.formError = e5 instanceof Error ? e5.message : erplora().t(CATALOG, "ui.errorActionFailed");
     }
   }
   render() {
+    const t5 = (k2) => erplora().t(CATALOG, k2);
     return b2`<div>
         <header>
-          <h2>Carritos</h2>
+          <h2>${t5("ui.cartsTitle")}</h2>
         </header>
         <form class="form" @submit=${(e5) => this.createCart(e5)}>
-          <ion-input placeholder="Session token" .value=${this.newToken} @ionInput=${(e5) => this.newToken = e5.target.value}></ion-input>
-          <ion-input placeholder="Email (opcional)" .value=${this.newEmail} @ionInput=${(e5) => this.newEmail = e5.target.value}></ion-input>
-          <ion-input placeholder="Nombre (opcional)" .value=${this.newName} @ionInput=${(e5) => this.newName = e5.target.value}></ion-input>
-          <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? "Guardando\u2026" : "Nuevo carrito"}</ion-button>
+          <ion-input placeholder=${t5("ui.placeholderSessionToken")} .value=${this.newToken} @ionInput=${(e5) => this.newToken = e5.target.value}></ion-input>
+          <ion-input placeholder=${t5("ui.placeholderEmailOptional")} .value=${this.newEmail} @ionInput=${(e5) => this.newEmail = e5.target.value}></ion-input>
+          <ion-input placeholder=${t5("ui.placeholderNameOptional")} .value=${this.newName} @ionInput=${(e5) => this.newName = e5.target.value}></ion-input>
+          <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t5("ui.buttonSaving") : t5("ui.buttonNewCart")}</ion-button>
         </form>
         ${this.formError ? b2`<p class="err">${this.formError}</p>` : A}
         ${this.ctrl?.error ? b2`<p class="err">${this.ctrl.error}</p>` : A}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${"Buscar sesi\xF3n o email\u2026"} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? "Cargando\u2026" : "Sin carritos."} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
       </div>`;
   }
 };
@@ -2954,12 +3068,13 @@ __decorateClass([
 ], ErpCartCheckoutCarts.prototype, "tick", 2);
 define("erp-cart-checkout-carts", ErpCartCheckoutCarts);
 
-// ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
-var STATUS_LABELS2 = {
-  initiated: "Initiated",
-  paid: "Paid",
-  failed: "Failed",
-  completed: "Completed"
+// ../modules-workspace/modules/cart_checkout/ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
+var CATALOG2 = { es: es_default, en: en_default };
+var STATUS_KEYS2 = {
+  initiated: "ui.statusInitiated",
+  paid: "ui.statusPaid",
+  failed: "ui.statusFailed",
+  completed: "ui.statusCompleted"
 };
 function erplora2() {
   const c5 = globalThis.erplora;
@@ -2971,26 +3086,10 @@ var ErpCartCheckoutOrders = class extends i3 {
     super(...arguments);
     this.formError = "";
     this.tick = 0;
-    this.columns = [
-      { key: "order_number", header: "Pedido", sortable: true, filterable: true, filterType: "text" },
-      { key: "customer_email", header: "Email", sortable: true, filterable: true, filterType: "text" },
-      {
-        key: "status",
-        header: "Estado",
-        sortable: true,
-        filterable: true,
-        filterType: "select",
-        options: Object.entries(STATUS_LABELS2).map(([value, label]) => ({ value, label })),
-        format: (r6) => STATUS_LABELS2[r6.status] ?? r6.status
-      },
-      { key: "payment_method", header: "Pago", sortable: true, filterable: true, filterType: "text", format: (r6) => r6.payment_method || "\u2014" },
-      { key: "total_amount", header: "Total", align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => Number(r6.total_amount).toFixed(2) }
-    ];
-    this.actions = [
-      { id: "pay", label: "Marcar pagado", icon: "card-outline", color: "primary" },
-      { id: "complete", label: "Completar", icon: "checkmark-done-outline", color: "success" },
-      { id: "fail", label: "Fallar", icon: "close-outline", color: "danger" }
-    ];
+    // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
+    // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
+    // sola vez tras el primer render, considera firstUpdated() en su lugar.
+    this.onLocaleChange = () => this.requestUpdate();
   }
   static {
     this.styles = i`
@@ -3000,11 +3099,37 @@ var ErpCartCheckoutOrders = class extends i3 {
     .err { color:#d9480f; font-weight:600; }
   `;
   }
-  // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
-  // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
-  // sola vez tras el primer render, considera firstUpdated() en su lugar.
+  // Getters (no campos): se re-evalúan en cada render, así los textos cambian con el idioma activo
+  // (ADR-0055). `connectedCallback` re-renderiza al recibir `erplora:locale-changed`.
+  get columns() {
+    const t5 = (k2) => erplora2().t(CATALOG2, k2);
+    return [
+      { key: "order_number", header: t5("ui.colOrder"), sortable: true, filterable: true, filterType: "text" },
+      { key: "customer_email", header: t5("ui.colEmail"), sortable: true, filterable: true, filterType: "text" },
+      {
+        key: "status",
+        header: t5("ui.colStatus"),
+        sortable: true,
+        filterable: true,
+        filterType: "select",
+        options: Object.entries(STATUS_KEYS2).map(([value, key]) => ({ value, label: t5(key) })),
+        format: (r6) => STATUS_KEYS2[r6.status] ? t5(STATUS_KEYS2[r6.status]) : r6.status
+      },
+      { key: "payment_method", header: t5("ui.colPayment"), sortable: true, filterable: true, filterType: "text", format: (r6) => r6.payment_method || "\u2014" },
+      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => Number(r6.total_amount).toFixed(2) }
+    ];
+  }
+  get actions() {
+    const t5 = (k2) => erplora2().t(CATALOG2, k2);
+    return [
+      { id: "pay", label: t5("ui.actionMarkPaid"), icon: "card-outline", color: "primary" },
+      { id: "complete", label: t5("ui.actionComplete"), icon: "checkmark-done-outline", color: "success" },
+      { id: "fail", label: t5("ui.actionFail"), icon: "close-outline", color: "danger" }
+    ];
+  }
   async connectedCallback() {
     super.connectedCallback();
+    window.addEventListener("erplora:locale-changed", this.onLocaleChange);
     this.ctrl = createListController(erplora2(), "cart_checkout.orders.list", () => this.requestUpdate(), {
       pageSize: 50,
       sort: "created_at",
@@ -3026,6 +3151,7 @@ var ErpCartCheckoutOrders = class extends i3 {
     }
   }
   disconnectedCallback() {
+    window.removeEventListener("erplora:locale-changed", this.onLocaleChange);
     super.disconnectedCallback();
     this.unsub?.();
   }
@@ -3043,17 +3169,18 @@ var ErpCartCheckoutOrders = class extends i3 {
       }
       await this.ctrl.load();
     } catch (e5) {
-      this.formError = e5 instanceof Error ? e5.message : "No se pudo completar la acci\xF3n";
+      this.formError = e5 instanceof Error ? e5.message : erplora2().t(CATALOG2, "ui.errorActionFailed");
     }
   }
   render() {
+    const t5 = (k2) => erplora2().t(CATALOG2, k2);
     return b2`<div>
         <header>
-          <h2>Pedidos</h2>
+          <h2>${t5("ui.ordersTitle")}</h2>
         </header>
         ${this.formError ? b2`<p class="err">${this.formError}</p>` : A}
         ${this.ctrl?.error ? b2`<p class="err">${this.ctrl.error}</p>` : A}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${"Buscar pedido o email\u2026"} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? "Cargando\u2026" : "Sin pedidos."} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchOrders")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyOrders")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
       </div>`;
   }
 };

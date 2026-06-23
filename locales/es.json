@@ -7,5 +7,41 @@
     "orders": {
       "label": "Pedidos"
     }
+  },
+  "ui": {
+    "cartsTitle": "Carritos",
+    "ordersTitle": "Pedidos",
+    "colSession": "Sesión",
+    "colEmail": "Email",
+    "colStatus": "Estado",
+    "colItems": "Ítems",
+    "colTotal": "Total",
+    "colOrder": "Pedido",
+    "colPayment": "Pago",
+    "statusActive": "Activo",
+    "statusAbandoned": "Abandonado",
+    "statusConverted": "Convertido",
+    "statusExpired": "Expirado",
+    "statusInitiated": "Iniciado",
+    "statusPaid": "Pagado",
+    "statusFailed": "Fallido",
+    "statusCompleted": "Completado",
+    "actionAbandon": "Abandonar",
+    "actionDelete": "Borrar",
+    "actionMarkPaid": "Marcar pagado",
+    "actionComplete": "Completar",
+    "actionFail": "Fallar",
+    "placeholderSessionToken": "Session token",
+    "placeholderEmailOptional": "Email (opcional)",
+    "placeholderNameOptional": "Nombre (opcional)",
+    "buttonSaving": "Guardando…",
+    "buttonNewCart": "Nuevo carrito",
+    "searchCarts": "Buscar sesión o email…",
+    "searchOrders": "Buscar pedido o email…",
+    "loading": "Cargando…",
+    "emptyCarts": "Sin carritos.",
+    "emptyOrders": "Sin pedidos.",
+    "errorCreateCart": "No se pudo crear el carrito",
+    "errorActionFailed": "No se pudo completar la acción"
   }
 }

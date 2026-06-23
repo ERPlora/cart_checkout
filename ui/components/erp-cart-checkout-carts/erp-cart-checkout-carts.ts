@@ -2,15 +2,23 @@ import { LitElement, html, css, nothing } from 'lit';
 import { state } from 'lit/decorators.js';
 import { define } from '@erplora/outfitkit/define';
 import '@erplora/outfitkit/ok-data-table';
-import type { DataTableColumn } from '@erplora/outfitkit';
+import type { DataTableColumn, DataTableAction } from '@erplora/outfitkit';
 import { createListController } from '@erplora/module-sdk';
 import type { ListController, ListClient, ListParams, ListPage } from '@erplora/module-sdk';
+// Catálogo i18n del módulo (ADR-0055): esbuild inlinea estos JSON en el `dist` del WC. Los textos
+// internos se resuelven con `erplora.t(CATALOG, 'ui.clave')` (idioma activo, fallback locale→en→clave).
+import esLocale from '../../../locales/es.json';
+import enLocale from '../../../locales/en.json';
+const CATALOG: Record<string, unknown> = { es: esLocale, en: enLocale };
 
 interface ErploraClientLike extends ListClient {
   query<T = unknown>(name: string, params?: Record<string, unknown>): Promise<T>;
   queryPage<R = unknown>(name: string, params: ListParams): Promise<ListPage<R>>;
   command<T = unknown>(name: string, payload?: Record<string, unknown>): Promise<T>;
   on(event: string, cb: (payload: unknown) => void): () => void;
+  /** i18n del módulo (ADR-0055): idioma activo + traducción del catálogo `ui`. */
+  locale: string;
+  t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
 }
 
 interface Cart {
@@ -26,11 +34,12 @@ interface Cart {
   created_at: string | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  active: 'Active',
-  abandoned: 'Abandoned',
-  converted: 'Converted',
-  expired: 'Expired',
+// Estados → clave i18n del catálogo `ui` (el `value` enviado al runtime NO cambia).
+const STATUS_KEYS: Record<string, string> = {
+  active: 'ui.statusActive',
+  abandoned: 'ui.statusAbandoned',
+  converted: 'ui.statusConverted',
+  expired: 'ui.statusExpired',
 };
 
 function erplora(): ErploraClientLike {
@@ -65,32 +74,43 @@ export class ErpCartCheckoutCarts extends LitElement {
 
   private unsub?: () => void;
 
-  private columns: DataTableColumn[] = [
-    { key: 'session_token', header: 'Sesión', sortable: true, filterable: true, filterType: 'text' },
-    { key: 'customer_email', header: 'Email', sortable: true, filterable: true, filterType: 'text', format: (r) => (r.customer_email as string) || '—' },
-    {
-      key: 'status',
-      header: 'Estado',
-      sortable: true,
-      filterable: true,
-      filterType: 'select',
-      options: Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-      format: (r) => STATUS_LABELS[r.status as string] ?? (r.status as string),
-    },
-    { key: 'total_items', header: 'Ítems', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => String(r.total_items ?? 0) },
-    { key: 'total_amount', header: 'Total', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => `${Number(r.total_amount).toFixed(2)} ${r.currency || 'EUR'}` },
-  ];
+  // Getters (no campos): se re-evalúan en cada render, así los textos cambian con el idioma activo
+  // (ADR-0055). `connectedCallback` re-renderiza al recibir `erplora:locale-changed`.
+  private get columns(): DataTableColumn[] {
+    const t = (k: string): string => erplora().t(CATALOG, k);
+    return [
+      { key: 'session_token', header: t('ui.colSession'), sortable: true, filterable: true, filterType: 'text' },
+      { key: 'customer_email', header: t('ui.colEmail'), sortable: true, filterable: true, filterType: 'text', format: (r) => (r.customer_email as string) || '—' },
+      {
+        key: 'status',
+        header: t('ui.colStatus'),
+        sortable: true,
+        filterable: true,
+        filterType: 'select',
+        options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t(key) })),
+        format: (r) => (STATUS_KEYS[r.status as string] ? t(STATUS_KEYS[r.status as string]) : (r.status as string)),
+      },
+      { key: 'total_items', header: t('ui.colItems'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => String(r.total_items ?? 0) },
+      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => `${Number(r.total_amount).toFixed(2)} ${r.currency || 'EUR'}` },
+    ];
+  }
 
-  private actions = [
-    { id: 'abandon', label: 'Abandonar', icon: 'close-circle-outline', color: 'warning' },
-    { id: 'delete', label: 'Borrar', icon: 'trash-outline', color: 'danger' },
-  ];
+  private get actions(): DataTableAction[] {
+    const t = (k: string): string => erplora().t(CATALOG, k);
+    return [
+      { id: 'abandon', label: t('ui.actionAbandon'), icon: 'close-circle-outline', color: 'warning' },
+      { id: 'delete', label: t('ui.actionDelete'), icon: 'trash-outline', color: 'danger' },
+    ];
+  }
 
   // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
   // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
   // sola vez tras el primer render, considera firstUpdated() en su lugar.
+  private readonly onLocaleChange = (): void => this.requestUpdate();
+
   async connectedCallback() {
     super.connectedCallback();
+    window.addEventListener('erplora:locale-changed', this.onLocaleChange);
     this.ctrl = createListController<Cart>(erplora(), 'cart_checkout.carts.list', () => this.requestUpdate(), {
       pageSize: 50,
       sort: 'created_at',
@@ -119,6 +139,7 @@ export class ErpCartCheckoutCarts extends LitElement {
   }
 
   disconnectedCallback() {
+    window.removeEventListener('erplora:locale-changed', this.onLocaleChange);
     super.disconnectedCallback();
     this.unsub?.();
   }
@@ -141,7 +162,7 @@ export class ErpCartCheckoutCarts extends LitElement {
       this.newName = '';
       await this.ctrl.load();
     } catch (e) {
-      this.formError = e instanceof Error ? e.message : 'No se pudo crear el carrito';
+      this.formError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorCreateCart');
     } finally {
       this.saving = false;
     }
@@ -159,24 +180,25 @@ export class ErpCartCheckoutCarts extends LitElement {
       }
       await this.ctrl.load();
     } catch (e) {
-      this.formError = e instanceof Error ? e.message : 'No se pudo completar la acción';
+      this.formError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorActionFailed');
     }
   }
 
   render() {
+    const t = (k: string): string => erplora().t(CATALOG, k);
     return html`<div>
         <header>
-          <h2>Carritos</h2>
+          <h2>${t('ui.cartsTitle')}</h2>
         </header>
         <form class="form" @submit=${(e) => this.createCart(e)}>
-          <ion-input placeholder="Session token" .value=${this.newToken} @ionInput=${(e: any) => (this.newToken = e.target.value)}></ion-input>
-          <ion-input placeholder="Email (opcional)" .value=${this.newEmail} @ionInput=${(e: any) => (this.newEmail = e.target.value)}></ion-input>
-          <ion-input placeholder="Nombre (opcional)" .value=${this.newName} @ionInput=${(e: any) => (this.newName = e.target.value)}></ion-input>
-          <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? 'Guardando…' : 'Nuevo carrito'}</ion-button>
+          <ion-input placeholder=${t('ui.placeholderSessionToken')} .value=${this.newToken} @ionInput=${(e: any) => (this.newToken = e.target.value)}></ion-input>
+          <ion-input placeholder=${t('ui.placeholderEmailOptional')} .value=${this.newEmail} @ionInput=${(e: any) => (this.newEmail = e.target.value)}></ion-input>
+          <ion-input placeholder=${t('ui.placeholderNameOptional')} .value=${this.newName} @ionInput=${(e: any) => (this.newName = e.target.value)}></ion-input>
+          <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t('ui.buttonSaving') : t('ui.buttonNewCart')}</ion-button>
         </form>
         ${this.formError ? html`<p class="err">${this.formError}</p>` : nothing}
         ${this.ctrl?.error ? html`<p class="err">${this.ctrl.error}</p>` : nothing}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${"Buscar sesión o email…"} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? 'Cargando…' : 'Sin carritos.'} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
       </div>`;
   }
 }

@@ -7,5 +7,41 @@
     "orders": {
       "label": "Orders"
     }
+  },
+  "ui": {
+    "cartsTitle": "Carts",
+    "ordersTitle": "Orders",
+    "colSession": "Session",
+    "colEmail": "Email",
+    "colStatus": "Status",
+    "colItems": "Items",
+    "colTotal": "Total",
+    "colOrder": "Order",
+    "colPayment": "Payment",
+    "statusActive": "Active",
+    "statusAbandoned": "Abandoned",
+    "statusConverted": "Converted",
+    "statusExpired": "Expired",
+    "statusInitiated": "Initiated",
+    "statusPaid": "Paid",
+    "statusFailed": "Failed",
+    "statusCompleted": "Completed",
+    "actionAbandon": "Abandon",
+    "actionDelete": "Delete",
+    "actionMarkPaid": "Mark paid",
+    "actionComplete": "Complete",
+    "actionFail": "Fail",
+    "placeholderSessionToken": "Session token",
+    "placeholderEmailOptional": "Email (optional)",
+    "placeholderNameOptional": "Name (optional)",
+    "buttonSaving": "Saving…",
+    "buttonNewCart": "New cart",
+    "searchCarts": "Search session or email…",
+    "searchOrders": "Search order or email…",
+    "loading": "Loading…",
+    "emptyCarts": "No carts.",
+    "emptyOrders": "No orders.",
+    "errorCreateCart": "Could not create the cart",
+    "errorActionFailed": "Could not complete the action"
   }
 }

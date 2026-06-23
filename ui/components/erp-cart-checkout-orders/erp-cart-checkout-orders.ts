@@ -2,15 +2,23 @@ import { LitElement, html, css, nothing } from 'lit';
 import { state } from 'lit/decorators.js';
 import { define } from '@erplora/outfitkit/define';
 import '@erplora/outfitkit/ok-data-table';
-import type { DataTableColumn } from '@erplora/outfitkit';
+import type { DataTableColumn, DataTableAction } from '@erplora/outfitkit';
 import { createListController } from '@erplora/module-sdk';
 import type { ListController, ListClient, ListParams, ListPage } from '@erplora/module-sdk';
+// Catálogo i18n del módulo (ADR-0055): esbuild inlinea estos JSON en el `dist` del WC. Los textos
+// internos se resuelven con `erplora.t(CATALOG, 'ui.clave')` (idioma activo, fallback locale→en→clave).
+import esLocale from '../../../locales/es.json';
+import enLocale from '../../../locales/en.json';
+const CATALOG: Record<string, unknown> = { es: esLocale, en: enLocale };
 
 interface ErploraClientLike extends ListClient {
   query<T = unknown>(name: string, params?: Record<string, unknown>): Promise<T>;
   queryPage<R = unknown>(name: string, params: ListParams): Promise<ListPage<R>>;
   command<T = unknown>(name: string, payload?: Record<string, unknown>): Promise<T>;
   on(event: string, cb: (payload: unknown) => void): () => void;
+  /** i18n del módulo (ADR-0055): idioma activo + traducción del catálogo `ui`. */
+  locale: string;
+  t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
 }
 
 interface Order {
@@ -26,11 +34,12 @@ interface Order {
   created_at: string | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  initiated: 'Initiated',
-  paid: 'Paid',
-  failed: 'Failed',
-  completed: 'Completed',
+// Estados → clave i18n del catálogo `ui` (el `value` enviado al runtime NO cambia).
+const STATUS_KEYS: Record<string, string> = {
+  initiated: 'ui.statusInitiated',
+  paid: 'ui.statusPaid',
+  failed: 'ui.statusFailed',
+  completed: 'ui.statusCompleted',
 };
 
 function erplora(): ErploraClientLike {
@@ -55,33 +64,44 @@ export class ErpCartCheckoutOrders extends LitElement {
 
   private unsub?: () => void;
 
-  private columns: DataTableColumn[] = [
-    { key: 'order_number', header: 'Pedido', sortable: true, filterable: true, filterType: 'text' },
-    { key: 'customer_email', header: 'Email', sortable: true, filterable: true, filterType: 'text' },
-    {
-      key: 'status',
-      header: 'Estado',
-      sortable: true,
-      filterable: true,
-      filterType: 'select',
-      options: Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-      format: (r) => STATUS_LABELS[r.status as string] ?? (r.status as string),
-    },
-    { key: 'payment_method', header: 'Pago', sortable: true, filterable: true, filterType: 'text', format: (r) => (r.payment_method as string) || '—' },
-    { key: 'total_amount', header: 'Total', align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => Number(r.total_amount).toFixed(2) },
-  ];
+  // Getters (no campos): se re-evalúan en cada render, así los textos cambian con el idioma activo
+  // (ADR-0055). `connectedCallback` re-renderiza al recibir `erplora:locale-changed`.
+  private get columns(): DataTableColumn[] {
+    const t = (k: string): string => erplora().t(CATALOG, k);
+    return [
+      { key: 'order_number', header: t('ui.colOrder'), sortable: true, filterable: true, filterType: 'text' },
+      { key: 'customer_email', header: t('ui.colEmail'), sortable: true, filterable: true, filterType: 'text' },
+      {
+        key: 'status',
+        header: t('ui.colStatus'),
+        sortable: true,
+        filterable: true,
+        filterType: 'select',
+        options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t(key) })),
+        format: (r) => (STATUS_KEYS[r.status as string] ? t(STATUS_KEYS[r.status as string]) : (r.status as string)),
+      },
+      { key: 'payment_method', header: t('ui.colPayment'), sortable: true, filterable: true, filterType: 'text', format: (r) => (r.payment_method as string) || '—' },
+      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => Number(r.total_amount).toFixed(2) },
+    ];
+  }
 
-  private actions = [
-    { id: 'pay', label: 'Marcar pagado', icon: 'card-outline', color: 'primary' },
-    { id: 'complete', label: 'Completar', icon: 'checkmark-done-outline', color: 'success' },
-    { id: 'fail', label: 'Fallar', icon: 'close-outline', color: 'danger' },
-  ];
+  private get actions(): DataTableAction[] {
+    const t = (k: string): string => erplora().t(CATALOG, k);
+    return [
+      { id: 'pay', label: t('ui.actionMarkPaid'), icon: 'card-outline', color: 'primary' },
+      { id: 'complete', label: t('ui.actionComplete'), icon: 'checkmark-done-outline', color: 'success' },
+      { id: 'fail', label: t('ui.actionFail'), icon: 'close-outline', color: 'danger' },
+    ];
+  }
 
   // TODO-LIT: componentWillLoad → connectedCallback. Recuerda: connectedCallback se dispara
   // en CADA reconexión al DOM (no solo en el primer montaje). Si la init debe correr una
   // sola vez tras el primer render, considera firstUpdated() en su lugar.
+  private readonly onLocaleChange = (): void => this.requestUpdate();
+
   async connectedCallback() {
     super.connectedCallback();
+    window.addEventListener('erplora:locale-changed', this.onLocaleChange);
     this.ctrl = createListController<Order>(erplora(), 'cart_checkout.orders.list', () => this.requestUpdate(), {
       pageSize: 50,
       sort: 'created_at',
@@ -105,6 +125,7 @@ export class ErpCartCheckoutOrders extends LitElement {
   }
 
   disconnectedCallback() {
+    window.removeEventListener('erplora:locale-changed', this.onLocaleChange);
     super.disconnectedCallback();
     this.unsub?.();
   }
@@ -123,18 +144,19 @@ export class ErpCartCheckoutOrders extends LitElement {
       }
       await this.ctrl.load();
     } catch (e) {
-      this.formError = e instanceof Error ? e.message : 'No se pudo completar la acción';
+      this.formError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorActionFailed');
     }
   }
 
   render() {
+    const t = (k: string): string => erplora().t(CATALOG, k);
     return html`<div>
         <header>
-          <h2>Pedidos</h2>
+          <h2>${t('ui.ordersTitle')}</h2>
         </header>
         ${this.formError ? html`<p class="err">${this.formError}</p>` : nothing}
         ${this.ctrl?.error ? html`<p class="err">${this.ctrl.error}</p>` : nothing}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${"Buscar pedido o email…"} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? 'Cargando…' : 'Sin pedidos.'} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchOrders')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyOrders')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
       </div>`;
   }
 }
