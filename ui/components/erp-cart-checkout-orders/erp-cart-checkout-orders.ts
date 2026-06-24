@@ -50,7 +50,7 @@ function erplora(): ErploraClientLike {
 
 export class ErpCartCheckoutOrders extends LitElement {
   static styles = css`
-    :host { display:block; font-family: system-ui, sans-serif; color: var(--ink, #1c1b18); }
+    :host { display:block; font-family: system-ui, sans-serif; color: var(--ion-text-color, #1c1b18); }
     header { display:flex; gap:.5rem; align-items:center; margin-bottom:.75rem; }
     h2 { margin:0; font-size:1.15rem; flex:1; }
     .err { color:#d9480f; font-weight:600; }
