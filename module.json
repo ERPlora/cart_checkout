@@ -117,14 +117,16 @@
       },
       "ai": {
         "description": "Lists active or recent shopping carts"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.carts.get": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/cart_get.sql",
       "ai": {
         "description": "Retrieves the full detail of a specific shopping cart including its items"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.items.list": {
       "permission": "cart_checkout.view_cart",
@@ -178,7 +180,8 @@
       },
       "ai": {
         "description": "Lists items added to a shopping cart"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.orders.list": {
       "permission": "cart_checkout.view_cart",
@@ -247,14 +250,16 @@
       },
       "ai": {
         "description": "Lists orders generated from the checkout process"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.orders.get": {
       "permission": "cart_checkout.view_cart",
       "sql": "queries/order_get.sql",
       "ai": {
         "description": "Retrieves the full detail of a specific order including its payment status"
-      }
+      },
+      "expose_api": true
     }
   },
   "commands": {
@@ -270,7 +275,8 @@
       ],
       "ai": {
         "description": "Creates a new shopping cart for a customer or session"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.carts.mark_abandoned": {
       "permission": "cart_checkout.manage_cart",
@@ -353,7 +359,8 @@
       },
       "ai": {
         "description": "Adds a product to the shopping cart with the specified quantity (the handler emits cart_checkout.item.added)"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.items.update": {
       "permission": "cart_checkout.manage_cart",
@@ -365,7 +372,8 @@
       },
       "ai": {
         "description": "Updates the quantity of an item already in the cart; quantity <= 0 removes it (the handler emits cart_checkout.item.updated)"
-      }
+      },
+      "expose_api": true
     },
     "cart_checkout.carts.clear": {
       "permission": "cart_checkout.manage_cart",
