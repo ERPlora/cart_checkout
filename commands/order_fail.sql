@@ -4,7 +4,8 @@
 -- ya 'completed') se valida en runtime — ver WASM-TODO; aquí excluimos status='completed'.
 UPDATE cart_checkout_session
 SET status = 'failed',
-    notes = TRIM(notes || char(10) || '[FAILED] ' || :reason),
+    notes = TRIM(notes || '
+' || '[FAILED] ' || :reason),
     updated_by = :current_user_id,
     updated_at = :now
 WHERE id = :checkout_id AND hub_id = :hub_id AND is_deleted = 0 AND status <> 'completed';

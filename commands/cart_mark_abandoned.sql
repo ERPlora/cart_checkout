@@ -5,7 +5,8 @@
 UPDATE cart_checkout_cart
 SET status = 'abandoned',
     notes = CASE WHEN :reason = '' THEN notes
-                 ELSE TRIM(notes || char(10) || '[ABANDONED] ' || :reason) END,
+                 ELSE TRIM(notes || '
+' || '[ABANDONED] ' || :reason) END,
     updated_by = :current_user_id,
     updated_at = :now
 WHERE id = :cart_id AND hub_id = :hub_id AND is_deleted = 0 AND status = 'active';
