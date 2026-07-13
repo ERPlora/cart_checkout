@@ -10,7 +10,7 @@
     "product_name": { "type": "string", "minLength": 1, "maxLength": 255 },
     "sku": { "type": "string", "default": "", "maxLength": 128 },
     "quantity": { "type": "integer", "minimum": 1 },
-    "unit_price": { "type": ["number", "string"] },
+    "unit_price": { "type": "integer" },
     "variant_attributes": { "type": ["object", "string"], "default": "{}" }
   }
 }
