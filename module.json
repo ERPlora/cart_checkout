@@ -1,7 +1,7 @@
 {
   "id": "cart_checkout",
   "name": "Cart & Checkout",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "agent": {
     "description": "Manages shopping carts and the checkout process: add/remove items, initiate checkout, create orders, and mark payments.",
     "keywords": [
