@@ -50,11 +50,13 @@ function erplora(): ErploraClientLike {
 
 export class ErpCartCheckoutCarts extends LitElement {
   static styles = css`
-    :host { display:block; font-family: system-ui, sans-serif; color: var(--ion-text-color, #1c1b18); }
-    header { display:flex; gap:.5rem; align-items:center; margin-bottom:.75rem; }
-    h2 { margin:0; font-size:1.15rem; flex:1; }
-    .form { display:flex; gap:.75rem; flex-wrap:wrap; align-items:end; margin:.5rem 0 1.25rem; }
-    .form ion-input, .form ion-select { flex:1 1 11rem; min-width:9rem; }
+    :host { display:flex; flex-direction:column; height:100%; min-height:0; font-family: system-ui, sans-serif; color: var(--ion-text-color, #1c1b18); }
+    /* La vista llena el alto: el data-table ocupa todo (scroll interno, pie fijo). */
+    .page { display:flex; flex-direction:column; min-height:0; flex:1 1 auto; }
+    .page > ok-data-table { flex:1 1 auto; min-height:0; }
+    /* Formulario del panel de alta (drawer estrecho) → una columna, no en fila. */
+    .form { display:flex; flex-direction:column; gap:.7rem; }
+    .form ion-button { align-self:flex-end; }
     .err { color:#d9480f; font-weight:600; }
   `;
 
@@ -144,6 +146,13 @@ export class ErpCartCheckoutCarts extends LitElement {
     this.unsub?.();
   }
 
+  // Referencia al ok-data-table para abrir/cerrar su panel lateral (el «+» de su barra).
+  private dataTable(): { open(p?: 'filters' | 'create'): void; close(): void } | null {
+    return this.renderRoot.querySelector('ok-data-table') as
+      | { open(p?: 'filters' | 'create'): void; close(): void }
+      | null;
+  }
+
   private async createCart(ev: Event) {
     ev.preventDefault();
     if (!this.newToken.trim()) return;
@@ -160,6 +169,7 @@ export class ErpCartCheckoutCarts extends LitElement {
       this.newToken = '';
       this.newEmail = '';
       this.newName = '';
+      this.dataTable()?.close(); // el panel del «+» taparía la tabla y el carrito recién creado
       await this.ctrl.load();
     } catch (e) {
       this.formError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorCreateCart');
@@ -184,21 +194,22 @@ export class ErpCartCheckoutCarts extends LitElement {
     }
   }
 
+  // El título de la vista lo pinta el topbar del shell: repetirlo aquí lo duplicaba en pantalla.
   render() {
     const t = (k: string): string => erplora().t(CATALOG, k);
-    return html`<div>
-        <header>
-          <h2>${t('ui.cartsTitle')}</h2>
-        </header>
-        <form class="form" @submit=${(e) => this.createCart(e)}>
-          <ion-input fill="outline" label-placement="floating" label=${t('ui.colSession')} placeholder=${t('ui.placeholderSessionToken')} .value=${this.newToken} @ionInput=${(e: any) => (this.newToken = e.target.value)}></ion-input>
-          <ion-input fill="outline" label-placement="floating" label=${t('ui.colEmail')} placeholder=${t('ui.placeholderEmailOptional')} .value=${this.newEmail} @ionInput=${(e: any) => (this.newEmail = e.target.value)}></ion-input>
-          <ion-input fill="outline" label-placement="floating" label=${t('ui.labelName')} placeholder=${t('ui.placeholderNameOptional')} .value=${this.newName} @ionInput=${(e: any) => (this.newName = e.target.value)}></ion-input>
-          <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t('ui.buttonSaving') : t('ui.buttonNewCart')}</ion-button>
-        </form>
+    return html`<div class="page">
         ${this.formError ? html`<p class="err">${this.formError}</p>` : nothing}
         ${this.ctrl?.error ? html`<p class="err">${this.ctrl.error}</p>` : nothing}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @pageSizeChange=${(e: CustomEvent<number>) => this.ctrl.setPageSize(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}>
+          <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
+               pintara al abrirlo, el «+» desplegaría un panel vacío en el primer clic. -->
+          <form slot="create" class="form" @submit=${(e: Event) => this.createCart(e)}>
+            <ion-input fill="outline" label-placement="floating" label=${t('ui.colSession')} placeholder=${t('ui.placeholderSessionToken')} .value=${this.newToken} @ionInput=${(e: any) => (this.newToken = e.target.value)}></ion-input>
+            <ion-input fill="outline" label-placement="floating" label=${t('ui.colEmail')} placeholder=${t('ui.placeholderEmailOptional')} .value=${this.newEmail} @ionInput=${(e: any) => (this.newEmail = e.target.value)}></ion-input>
+            <ion-input fill="outline" label-placement="floating" label=${t('ui.labelName')} placeholder=${t('ui.placeholderNameOptional')} .value=${this.newName} @ionInput=${(e: any) => (this.newName = e.target.value)}></ion-input>
+            <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t('ui.buttonSaving') : t('ui.buttonSave')}</ion-button>
+          </form>
+        </ok-data-table>
       </div>`;
   }
 }

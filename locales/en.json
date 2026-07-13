@@ -36,7 +36,7 @@
     "placeholderEmailOptional": "customer@example.com",
     "placeholderNameOptional": "John Doe",
     "buttonSaving": "Saving…",
-    "buttonNewCart": "New cart",
+    "buttonSave": "Save",
     "searchCarts": "Search session or email…",
     "searchOrders": "Search order or email…",
     "loading": "Loading…",
