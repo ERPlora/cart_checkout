@@ -10,7 +10,7 @@
 //!   cumplen); los errores tipados del legacy (`invalid_state`, `not_found`, `empty_cart`)
 //!   solo se devuelven para lo validable desde el payload (`invalid_quantity`,
 //!   `invalid_price`, `invalid_email`, `missing_*`);
-//! * `line_total = quantity * unit_price` con quantize 0.01 (half-even, como Decimal);
+//! * `line_total = quantity * unit_price` vía `money::mul_qty` (unidad mínima, HALF_UP);
 //!   en `update_cart_item` el precio vive en la fila, así que el recálculo lo hace el SQL;
 //! * los totales del carrito (`total_items`/`total_amount`) se recalculan con las
 //!   intenciones `_recalc_totals_by_token` / `_recalc_totals_by_item` (WASM-TODO §1);
@@ -18,6 +18,8 @@
 //!   `_insert_checkout` leyendo el contador con subquery en la MISMA transacción;
 //! * ids: el host pasa `context.new_ids` (autoridad de ids); el guest solo los reparte.
 
+use erplora_guest_sdk::money;
+use rust_decimal::Decimal;
 use erplora_guest_sdk::{Event, Operation, Output};
 use serde_json::{json, Map, Value};
 
@@ -72,31 +74,8 @@ fn to_fn_result(r: Result<Output, String>) -> FnResult<Json<Output>> {
 
 // ── Helpers (mismo estilo que kitchen-handler / sales-handler) ─────────────
 
-/// Redondea céntimos fraccionarios a céntimos enteros half-even (ADR-0007). `x` ya en
-/// el espacio de céntimos.
-fn round_cents(x: f64) -> i64 {
-    let floor = x.floor();
-    let diff = x - floor;
-    let r = if (diff - 0.5).abs() < 1e-9 {
-        if (floor as i64) % 2 == 0 { floor } else { floor + 1.0 }
-    } else {
-        x.round()
-    };
-    r as i64
-}
+// El DINERO lo calcula `erplora_guest_sdk::money` (ADR-0123): una sola implementación.
 
-/// Lee un importe **en céntimos** (`i64`) del payload: entero, string de entero, o
-/// (robustez) decimal interpretado como céntimos ya escalados. El contrato es céntimos.
-fn cents(v: &Value) -> Option<i64> {
-    match v {
-        Value::Number(n) => n.as_i64().or_else(|| n.as_f64().filter(|f| f.is_finite()).map(round_cents)),
-        Value::String(s) => {
-            let s = s.trim();
-            s.parse::<i64>().ok().or_else(|| s.parse::<f64>().ok().filter(|f| f.is_finite()).map(round_cents))
-        }
-        _ => None,
-    }
-}
 
 fn as_str(v: &Value) -> String {
     match v {
@@ -206,10 +185,13 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
     let quantity = parse_int(payload.get("quantity").unwrap_or(&Value::Null))
         .filter(|q| *q > 0)
         .ok_or_else(|| "invalid_quantity: debe ser un entero > 0".to_string())?;
-    let unit_price = cents(payload.get("unit_price").unwrap_or(&Value::Null)) // céntimos
+    // `-1` es el centinela de "ausente o ilegible": un precio válido nunca es negativo.
+    let unit_price = payload
+        .get("unit_price")
+        .map(|v| money::from_json(v, -1))
         .filter(|p| *p >= 0)
         .ok_or_else(|| "invalid_price: debe ser céntimos >= 0".to_string())?;
-    let line_total = round_cents(unit_price as f64 * quantity as f64); // céntimos
+    let line_total = money::mul_qty(unit_price, Decimal::from(quantity));
 
     let item_id = ctx.new_ids.first().cloned().unwrap_or_default();
     if item_id.is_empty() {
