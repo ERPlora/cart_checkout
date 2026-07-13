@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "module": "cart_checkout",
+  "consumes": {
+    "queries": [
+      "cart_checkout.carts.list",
+      "cart_checkout.orders.list"
+    ],
+    "optional_queries": [],
+    "commands": [
+      "cart_checkout.carts.create",
+      "cart_checkout.carts.delete",
+      "cart_checkout.carts.mark_abandoned",
+      "cart_checkout.orders.complete",
+      "cart_checkout.orders.fail",
+      "cart_checkout.orders.mark_paid"
+    ],
+    "events": [
+      "cart_checkout.cart.abandoned",
+      "cart_checkout.cart.cleared",
+      "cart_checkout.cart.created",
+      "cart_checkout.cart.deleted",
+      "cart_checkout.carts.expired",
+      "cart_checkout.checkout.initiated",
+      "cart_checkout.item.added",
+      "cart_checkout.item.removed",
+      "cart_checkout.item.updated",
+      "cart_checkout.order.completed",
+      "cart_checkout.order.failed",
+      "cart_checkout.order.paid"
+    ],
+    "slots": []
+  }
+}

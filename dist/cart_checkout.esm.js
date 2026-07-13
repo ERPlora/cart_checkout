@@ -3152,18 +3152,17 @@ var ErpCartCheckoutCarts = class extends i3 {
     });
     await this.ctrl.load();
     try {
-      const events = [
-        "cart_checkout.cart.created",
-        "cart_checkout.cart.abandoned",
-        "cart_checkout.cart.deleted",
-        "cart_checkout.cart.cleared",
-        "cart_checkout.carts.expired",
-        "cart_checkout.item.added",
-        "cart_checkout.item.updated",
-        "cart_checkout.item.removed",
-        "cart_checkout.order.completed"
+      const offs = [
+        erplora().on("cart_checkout.cart.created", () => this.ctrl.load()),
+        erplora().on("cart_checkout.cart.abandoned", () => this.ctrl.load()),
+        erplora().on("cart_checkout.cart.deleted", () => this.ctrl.load()),
+        erplora().on("cart_checkout.cart.cleared", () => this.ctrl.load()),
+        erplora().on("cart_checkout.carts.expired", () => this.ctrl.load()),
+        erplora().on("cart_checkout.item.added", () => this.ctrl.load()),
+        erplora().on("cart_checkout.item.updated", () => this.ctrl.load()),
+        erplora().on("cart_checkout.item.removed", () => this.ctrl.load()),
+        erplora().on("cart_checkout.order.completed", () => this.ctrl.load())
       ];
-      const offs = events.map((ev) => erplora().on(ev, () => this.ctrl.load()));
       this.unsub = () => offs.forEach((off) => off());
     } catch {
     }

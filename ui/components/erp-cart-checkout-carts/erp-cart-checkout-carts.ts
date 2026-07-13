@@ -122,18 +122,19 @@ export class ErpCartCheckoutCarts extends LitElement {
     try {
       // Los cambios de líneas/totales y el ciclo de vida (clear/expire/convert) los emite
       // el handler WASM; refrescan la lista igual que los eventos de los commands SQL.
-      const events = [
-        'cart_checkout.cart.created',
-        'cart_checkout.cart.abandoned',
-        'cart_checkout.cart.deleted',
-        'cart_checkout.cart.cleared',
-        'cart_checkout.carts.expired',
-        'cart_checkout.item.added',
-        'cart_checkout.item.updated',
-        'cart_checkout.item.removed',
-        'cart_checkout.order.completed',
+            // Una suscripción por evento, con su literal EN la llamada (ADR-0127: el extractor
+      // de contratos no sigue arrays; el nombre vive donde se usa).
+      const offs = [
+        erplora().on('cart_checkout.cart.created', () => this.ctrl.load()),
+        erplora().on('cart_checkout.cart.abandoned', () => this.ctrl.load()),
+        erplora().on('cart_checkout.cart.deleted', () => this.ctrl.load()),
+        erplora().on('cart_checkout.cart.cleared', () => this.ctrl.load()),
+        erplora().on('cart_checkout.carts.expired', () => this.ctrl.load()),
+        erplora().on('cart_checkout.item.added', () => this.ctrl.load()),
+        erplora().on('cart_checkout.item.updated', () => this.ctrl.load()),
+        erplora().on('cart_checkout.item.removed', () => this.ctrl.load()),
+        erplora().on('cart_checkout.order.completed', () => this.ctrl.load()),
       ];
-      const offs = events.map((ev) => erplora().on(ev, () => this.ctrl.load()));
       this.unsub = () => offs.forEach((off) => off());
     } catch {
       /* sin SDK (preview) → sin reactividad en vivo */
