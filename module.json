@@ -83,10 +83,10 @@
             "op": "eq"
           },
           "customer_email": {
-            "op": "eq"
+            "op": "like"
           },
           "customer_name": {
-            "op": "eq"
+            "op": "like"
           },
           "status": {
             "op": "eq"
@@ -107,7 +107,7 @@
             "op": "range"
           },
           "notes": {
-            "op": "eq"
+            "op": "like"
           },
           "created_at": {
             "op": "range"
@@ -156,10 +156,10 @@
             "op": "eq"
           },
           "product_name": {
-            "op": "eq"
+            "op": "like"
           },
           "sku": {
-            "op": "eq"
+            "op": "like"
           },
           "quantity": {
             "op": "range"
@@ -213,7 +213,7 @@
             "op": "eq"
           },
           "customer_email": {
-            "op": "eq"
+            "op": "like"
           },
           "shipping_method": {
             "op": "eq"
@@ -237,7 +237,7 @@
             "op": "range"
           },
           "notes": {
-            "op": "eq"
+            "op": "like"
           },
           "created_at": {
             "op": "range"
