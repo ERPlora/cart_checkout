@@ -1552,6 +1552,16 @@ function okIcon(value) {
 }
 
 // node_modules/.pnpm/@erplora+outfitkit@file+..+outfitkit/node_modules/@erplora/outfitkit/dist/ok-data-table.js
+var CSV_BOM = "\uFEFF";
+function decodeCsvBuffer(buf) {
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+  } catch {
+    text = new TextDecoder("windows-1252").decode(buf);
+  }
+  return text.charCodeAt(0) === 65279 ? text.slice(1) : text;
+}
 var __defProp2 = Object.defineProperty;
 var __decorateClass2 = (decorators, target, key, kind) => {
   var result = void 0;
@@ -1956,7 +1966,7 @@ var OkDataTable = class extends i3 {
     const head = cols.map((c5) => this.csvEscape(c5.key)).join(",");
     const lines = this.rows.map((r6) => cols.map((c5) => this.csvEscape(r6[c5.key])).join(","));
     const csv = [head, ...lines].join("\r\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([CSV_BOM + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a3 = document.createElement("a");
     a3.href = url;
@@ -2004,7 +2014,7 @@ var OkDataTable = class extends i3 {
     const input = ev.target;
     const file = input.files?.[0];
     if (!file) return;
-    const text = await file.text();
+    const text = decodeCsvBuffer(await file.arrayBuffer());
     const { headers, rows } = this.parseCsv(text);
     this.emit("csvImport", { headers, rows });
     this.emit("import", { headers, rows });
@@ -2976,6 +2986,15 @@ function createListController(client, queryName, onChange = () => {
   return new ListController(client, queryName, onChange, opts);
 }
 
+// modules/cart_checkout/ui/lib/quantity.ts
+var QUANTITY_SCALE = 1e6;
+function fromMicro(raw) {
+  return raw / QUANTITY_SCALE;
+}
+function formatQuantity(raw) {
+  return String(fromMicro(raw));
+}
+
 // modules/cart_checkout/locales/es.json
 var es_default = {
   name: "Carrito y pago",
@@ -3131,8 +3150,10 @@ var ErpCartCheckoutCarts = class extends i3 {
         options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t5(key) })),
         format: (r6) => STATUS_KEYS[r6.status] ? t5(STATUS_KEYS[r6.status]) : r6.status
       },
-      { key: "total_items", header: t5("ui.colItems"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => String(r6.total_items ?? 0) },
-      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => `${Number(r6.total_amount).toFixed(2)} ${r6.currency || "EUR"}` }
+      // total_items es µ (punto fijo 10⁶, ADR-0147) y total_amount CÉNTIMOS (ADR-0123): la
+      // pantalla habla lógico/euros. El `toFixed(2)` sobre el crudo pintaba 3150 → «3150.00».
+      { key: "total_items", header: t5("ui.colItems"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => formatQuantity(Number(r6.total_items ?? 0)) },
+      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => erplora().formatMoney(Number(r6.total_amount || 0), { currency: r6.currency || void 0 }) }
     ];
   }
   get actions() {
@@ -3221,7 +3242,7 @@ var ErpCartCheckoutCarts = class extends i3 {
     return b2`<div class="page">
         ${this.formError ? b2`<p class="err">${this.formError}</p>` : A}
         ${this.ctrl?.error ? b2`<p class="err">${this.ctrl.error}</p>` : A}
-        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @pageSizeChange=${(e5) => this.ctrl.setPageSize(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}>
+        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.customer_email || r6.session_token || "\u2014")} .cardIcon=${() => "cart-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @pageSizeChange=${(e5) => this.ctrl.setPageSize(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}>
           <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
                pintara al abrirlo, el «+» desplegaría un panel vacío en el primer clic. -->
           <form slot="create" class="form" @submit=${(e5) => this.createCart(e5)}>
@@ -3302,7 +3323,9 @@ var ErpCartCheckoutOrders = class extends i3 {
         format: (r6) => STATUS_KEYS2[r6.status] ? t5(STATUS_KEYS2[r6.status]) : r6.status
       },
       { key: "payment_method", header: t5("ui.colPayment"), sortable: true, filterable: true, filterType: "text", format: (r6) => r6.payment_method || "\u2014" },
-      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => Number(r6.total_amount).toFixed(2) }
+      // total_amount es CÉNTIMOS (ADR-0123): formatMoney divide. El toFixed(2) directo
+      // pintaba 3150 → «3150.00» (bug ×100, issue #9).
+      { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => erplora2().formatMoney(Number(r6.total_amount || 0)) }
     ];
   }
   get actions() {
@@ -3366,7 +3389,7 @@ var ErpCartCheckoutOrders = class extends i3 {
         </header>
         ${this.formError ? b2`<p class="err">${this.formError}</p>` : A}
         ${this.ctrl?.error ? b2`<p class="err">${this.ctrl.error}</p>` : A}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchOrders")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyOrders")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.order_number ?? "\u2014")} .cardIcon=${() => "receipt-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchOrders")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyOrders")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
       </div>`;
   }
 };

@@ -4,14 +4,16 @@
 //! **intenciones** (commands `_`-prefijados del propio módulo) que el host ejecuta en
 //! UNA transacción, más los eventos `cart_checkout.*` a emitir.
 //!
-//! Restricciones del runtime actual (sin lecturas pre-cargadas, patrón `kitchen`/`sales`):
+//! Restricciones del runtime actual (patrón `kitchen`/`sales`):
 //! * la resolución del carrito por `session_token` y las guardas de estado (`active`,
 //!   carrito no vacío, `paid → completed`) van EN EL SQL de la intención (no-op si no se
 //!   cumplen); los errores tipados del legacy (`invalid_state`, `not_found`, `empty_cart`)
 //!   solo se devuelven para lo validable desde el payload (`invalid_quantity`,
 //!   `invalid_price`, `invalid_email`, `missing_*`);
-//! * `line_total = quantity * unit_price` vía `money::mul_qty` (unidad mínima, HALF_UP);
-//!   en `update_cart_item` el precio vive en la fila, así que el recálculo lo hace el SQL;
+//! * las CANTIDADES son punto fijo entero escala 10⁶ (ADR-0147): `500000` = 0,5;
+//! * `line_total = quantity * unit_price` vía `money::mul_qty` con la cantidad LÓGICA
+//!   (raw/10⁶); en `update_cart_item` el precio vive en la fila y llega por la read
+//!   pre-cargada `cart_checkout.items.get` (ADR-0069 fase 2) — el SQL ya NO redondea;
 //! * los totales del carrito (`total_items`/`total_amount`) se recalculan con las
 //!   intenciones `_recalc_totals_by_token` / `_recalc_totals_by_item` (WASM-TODO §1);
 //! * `order_number` atómico `OS-YYYYMMDD-NNNN`: `_bump_counter` (upsert) +
@@ -19,6 +21,7 @@
 //! * ids: el host pasa `context.new_ids` (autoridad de ids); el guest solo los reparte.
 
 use erplora_guest_sdk::money;
+use erplora_guest_sdk::units::QUANTITY_SCALE;
 use rust_decimal::Decimal;
 use erplora_guest_sdk::{Event, Operation, Output};
 use serde_json::{json, Map, Value};
@@ -191,7 +194,8 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
         .map(|v| money::from_json(v, -1))
         .filter(|p| *p >= 0)
         .ok_or_else(|| "invalid_price: debe ser céntimos >= 0".to_string())?;
-    let line_total = money::mul_qty(unit_price, Decimal::from(quantity));
+    // La cantidad es punto fijo 10⁶ (ADR-0147); el dinero se multiplica por la LÓGICA exacta.
+    let line_total = money::mul_qty(unit_price, Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE));
 
     let item_id = ctx.new_ids.first().cloned().unwrap_or_default();
     if item_id.is_empty() {
@@ -231,7 +235,20 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
 
 // ── update_cart_item (command cart_checkout.items.update) ──────────────────
 
+/// La fila de la línea pre-cargada por el runtime (read `cart_checkout.items.get`, filtrada por
+/// `payload.item_id`). Acepta las dos formas del canal (`[…]` o `{rows:[…]}`), como sales.
+fn preloaded_item(input: &Value) -> Option<Value> {
+    let node = input.get("context")?.get("reads")?.get("cart_checkout.items.get")?;
+    let arr = match node {
+        Value::Array(a) => Some(a),
+        Value::Object(_) => node.get("rows").and_then(|v| v.as_array()),
+        _ => None,
+    }?;
+    arr.first().cloned()
+}
+
 pub fn update_cart_item_pure(input: Value) -> Result<Output, String> {
+    let row = preloaded_item(&input);
     let (payload, ctx) = split_input(&input);
 
     let item_id = str_field(&payload, "item_id");
@@ -241,15 +258,27 @@ pub fn update_cart_item_pure(input: Value) -> Result<Output, String> {
     let quantity = parse_int(payload.get("quantity").unwrap_or(&Value::Null))
         .ok_or_else(|| "invalid_quantity: debe ser un entero".to_string())?;
 
-    // quantity <= 0 ⇒ soft-delete de la línea; > 0 ⇒ update de qty (line_total lo
-    // recalcula el SQL con el unit_price de la fila). Guarda `carrito active` en el WHERE.
+    // quantity <= 0 ⇒ soft-delete de la línea; > 0 ⇒ update de qty. El line_total lo calcula
+    // el HANDLER con el unit_price de la fila (read pre-cargada, ADR-0069 fase 2): el SQL no
+    // redondea (SQLite y Postgres no redondean igual) ni conoce la escala 10⁶ (ADR-0147).
+    // Guarda `carrito active` en el WHERE.
     let removed = quantity <= 0;
     let mut op_params = Map::new();
     op_params.insert("item_id".into(), json!(item_id));
     let first = if removed {
         Operation::sql("cart_checkout._soft_delete_item", op_params)
     } else {
+        let row = row.ok_or_else(|| {
+            "item_not_found: la línea no existe (o la read `cart_checkout.items.get` no está declarada)".to_string()
+        })?;
+        let unit_price = row
+            .get("unit_price")
+            .map(|v| money::from_json(v, -1))
+            .filter(|p| *p >= 0)
+            .ok_or_else(|| "invalid_price: la fila no trae unit_price".to_string())?;
+        let line_total = money::mul_qty(unit_price, Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE));
         op_params.insert("quantity".into(), json!(quantity));
+        op_params.insert("line_total".into(), json!(line_total)); // céntimos
         Operation::sql("cart_checkout._update_item_qty", op_params)
     };
 
@@ -406,4 +435,68 @@ pub fn complete_checkout_pure(input: Value) -> Result<Output, String> {
         ],
         events: vec![cc_event("cart_checkout.order.completed", &ctx.user_id, ev)],
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn inp(payload: Value) -> Value {
+        json!({ "payload": payload, "context": {
+            "new_ids": ["id-0"], "now": "2026-07-19T10:00:00+00:00", "current_user_id": "u1"
+        } })
+    }
+
+    #[test]
+    fn add_to_cart_quantity_is_fixed_point_10e6() {
+        // ADR-0147: la cantidad viaja como punto fijo entero escala 10⁶. 0,5 (500000 µ)
+        // × 12,00 € = 6,00 € → 600 céntimos (HALF_UP del SDK), no 600 millones.
+        let out = add_to_cart_pure(inp(json!({
+            "session_token": "t1", "product_ref": "p1", "product_name": "Vino a granel",
+            "quantity": 500_000, "unit_price": 1200
+        })))
+        .expect("add válido");
+        let ins = &out.operations[0].params;
+        assert_eq!(ins["quantity"], json!(500_000));
+        assert_eq!(ins["line_total"], json!(600));
+    }
+
+    #[test]
+    fn update_item_line_total_from_preloaded_read() {
+        // El unit_price vive en la FILA: llega por la read pre-cargada (ADR-0069 fase 2) y el
+        // line_total lo calcula el HANDLER con el SDK — fuera el ROUND(unit_price*qty, 2) del
+        // SQL, que además de redondear en SQL (prohibido: SQLite y Postgres no redondean igual)
+        // multiplicaría µ como si fueran unidades.
+        let input = json!({
+            "payload": { "item_id": "i1", "quantity": 2_000_000 },
+            "context": {
+                "new_ids": [], "now": "2026-07-19T10:00:00+00:00", "current_user_id": "u1",
+                "reads": { "cart_checkout.items.get": [ { "id": "i1", "unit_price": 350 } ] }
+            }
+        });
+        let out = update_cart_item_pure(input).expect("update válido");
+        assert_eq!(out.operations[0].command, "cart_checkout._update_item_qty");
+        let p = &out.operations[0].params;
+        assert_eq!(p["quantity"], json!(2_000_000));
+        assert_eq!(p["line_total"], json!(700), "2 × 3,50 € — lo calcula el handler, no el SQL");
+    }
+
+    #[test]
+    fn update_item_without_row_errors() {
+        // Fila ausente en la read → error tipado: nunca escribir un line_total a ciegas.
+        let input = json!({
+            "payload": { "item_id": "ghost", "quantity": 1_000_000 },
+            "context": { "new_ids": [], "now": "2026-07-19T10:00:00+00:00", "current_user_id": "u1",
+                         "reads": { "cart_checkout.items.get": [] } }
+        });
+        assert!(update_cart_item_pure(input).is_err());
+    }
+
+    #[test]
+    fn update_item_zero_still_removes_without_read() {
+        // qty <= 0 sigue siendo soft-delete y no necesita la read (no calcula dinero).
+        let out = update_cart_item_pure(inp(json!({ "item_id": "i1", "quantity": 0 })))
+            .expect("remove válido");
+        assert_eq!(out.operations[0].command, "cart_checkout._soft_delete_item");
+    }
 }

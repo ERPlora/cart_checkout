@@ -6,6 +6,6 @@
   "required": ["item_id", "quantity"],
   "properties": {
     "item_id": { "type": "string", "minLength": 1 },
-    "quantity": { "type": "integer" }
+    "quantity": { "type": "integer", "description": "Punto fijo escala 10⁶ (ADR-0147); <= 0 elimina la línea" }
   }
 }
