@@ -5,6 +5,8 @@ import '@erplora/outfitkit/ok-data-table';
 import type { DataTableColumn, DataTableAction } from '@erplora/outfitkit';
 import { createListController } from '@erplora/module-sdk';
 import type { ListController, ListClient, ListParams, ListPage } from '@erplora/module-sdk';
+// Aduana de la escala de cantidades (ADR-0147): la fila trae µ (10⁶), la pantalla habla lógico.
+import { formatQuantity } from '../../lib/quantity';
 // Catálogo i18n del módulo (ADR-0055): esbuild inlinea estos JSON en el `dist` del WC. Los textos
 // internos se resuelven con `erplora.t(CATALOG, 'ui.clave')` (idioma activo, fallback locale→en→clave).
 import esLocale from '../../../locales/es.json';
@@ -19,6 +21,9 @@ interface ErploraClientLike extends ListClient {
   /** i18n del módulo (ADR-0055): idioma activo + traducción del catálogo `ui`. */
   locale: string;
   t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
+  /** Dinero (ADR-0059/0123): `formatMoney` recibe CÉNTIMOS y divide según la moneda. */
+  currency: string;
+  formatMoney(cents: number, opts?: { currency?: string; locale?: string }): string;
 }
 
 interface Cart {
@@ -92,8 +97,10 @@ export class ErpCartCheckoutCarts extends LitElement {
         options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t(key) })),
         format: (r) => (STATUS_KEYS[r.status as string] ? t(STATUS_KEYS[r.status as string]) : (r.status as string)),
       },
-      { key: 'total_items', header: t('ui.colItems'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => String(r.total_items ?? 0) },
-      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => `${Number(r.total_amount).toFixed(2)} ${r.currency || 'EUR'}` },
+      // total_items es µ (punto fijo 10⁶, ADR-0147) y total_amount CÉNTIMOS (ADR-0123): la
+      // pantalla habla lógico/euros. El `toFixed(2)` sobre el crudo pintaba 3150 → «3150.00».
+      { key: 'total_items', header: t('ui.colItems'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => formatQuantity(Number(r.total_items ?? 0)) },
+      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => erplora().formatMoney(Number(r.total_amount || 0), { currency: (r.currency as string) || undefined }) },
     ];
   }
 

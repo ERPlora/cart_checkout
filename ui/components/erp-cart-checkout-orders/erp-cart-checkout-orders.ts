@@ -19,6 +19,9 @@ interface ErploraClientLike extends ListClient {
   /** i18n del módulo (ADR-0055): idioma activo + traducción del catálogo `ui`. */
   locale: string;
   t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
+  /** Dinero (ADR-0059/0123): `formatMoney` recibe CÉNTIMOS y divide según la moneda. */
+  currency: string;
+  formatMoney(cents: number, opts?: { currency?: string; locale?: string }): string;
 }
 
 interface Order {
@@ -81,7 +84,9 @@ export class ErpCartCheckoutOrders extends LitElement {
         format: (r) => (STATUS_KEYS[r.status as string] ? t(STATUS_KEYS[r.status as string]) : (r.status as string)),
       },
       { key: 'payment_method', header: t('ui.colPayment'), sortable: true, filterable: true, filterType: 'text', format: (r) => (r.payment_method as string) || '—' },
-      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => Number(r.total_amount).toFixed(2) },
+      // total_amount es CÉNTIMOS (ADR-0123): formatMoney divide. El toFixed(2) directo
+      // pintaba 3150 → «3150.00» (bug ×100, issue #9).
+      { key: 'total_amount', header: t('ui.colTotal'), align: 'right', sortable: true, filterable: true, filterType: 'range', format: (r) => erplora().formatMoney(Number(r.total_amount || 0)) },
     ];
   }
 
