@@ -50,7 +50,13 @@
   "migrations": {
     "sqlite": [
       "migrations/sqlite/001_init.sql",
-      "migrations/sqlite/002_order_counter.sql"
+      "migrations/sqlite/002_order_counter.sql",
+      "migrations/sqlite/003_quantity_fixed_point.sql"
+    ],
+    "postgres": [
+      "migrations/postgres/001_init.sql",
+      "migrations/postgres/002_order_counter.sql",
+      "migrations/postgres/003_quantity_fixed_point.sql"
     ]
   },
   "queries": {
@@ -179,6 +185,10 @@
       "ai": {
         "description": "Lists items added to a shopping cart"
       }
+    },
+    "cart_checkout.items.get": {
+      "permission": "cart_checkout.view_cart",
+      "sql": "queries/item_get.sql"
     },
     "cart_checkout.orders.list": {
       "permission": "cart_checkout.view_cart",
@@ -358,6 +368,14 @@
     "cart_checkout.items.update": {
       "permission": "cart_checkout.manage_cart",
       "schema": "schemas/item_update.json",
+      "reads": [
+        {
+          "query": "cart_checkout.items.get",
+          "params": {
+            "item_id": "payload.item_id"
+          }
+        }
+      ],
       "handler": {
         "type": "wasm",
         "file": "dist/handler.wasm",

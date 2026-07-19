@@ -9,7 +9,7 @@
     "product_ref": { "type": "string", "minLength": 1, "maxLength": 255 },
     "product_name": { "type": "string", "minLength": 1, "maxLength": 255 },
     "sku": { "type": "string", "default": "", "maxLength": 128 },
-    "quantity": { "type": "integer", "minimum": 1 },
+    "quantity": { "type": "integer", "minimum": 1, "description": "Punto fijo escala 10⁶ (ADR-0147): 1000000 = 1 ud" },
     "unit_price": { "type": "integer" },
     "variant_attributes": { "type": ["object", "string"], "default": "{}" }
   }

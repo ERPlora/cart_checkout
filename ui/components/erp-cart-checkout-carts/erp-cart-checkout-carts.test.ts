@@ -22,8 +22,11 @@ beforeEach(() => {
           customer_email: 'ana@ejemplo.com',
           customer_name: 'Ana García',
           status: 'active',
-          total_items: 2,
-          total_amount: '31.50',
+          // Contratos de fila REALES: total_items en punto fijo 10⁶ (ADR-0147) y
+          // total_amount en CÉNTIMOS enteros (ADR-0123) — la fixture anterior ('31.50',
+          // 2) codificaba la creencia equivocada que producía el ×100 en pantalla.
+          total_items: 2_000_000,
+          total_amount: 3150,
           currency: 'EUR',
           last_activity_at: null,
           created_at: null,
@@ -38,6 +41,9 @@ beforeEach(() => {
     on: () => () => {},
     locale: 'es',
     t: (_catalog: unknown, key: string) => key,
+    currency: 'EUR',
+    formatMoney: (cents: number, opts?: { currency?: string }) =>
+      `${(cents / 100).toFixed(2)} ${opts?.currency || 'EUR'}`,
   };
 });
 
@@ -132,5 +138,22 @@ describe('el pie de la tabla manda: cambiar filas/página recarga server-side', 
     tabla(el)!.dispatchEvent(new CustomEvent('pageSizeChange', { detail: 25 }));
     const ctrl = (el as unknown as { ctrl: { state: { pageSize: number } } }).ctrl;
     expect(ctrl.state.pageSize, 'el selector de filas por página no está cableado').toBe(25);
+  });
+});
+
+describe('las columnas hablan el contrato: céntimos → formatMoney, µ → lógico', () => {
+  it('el total divide céntimos (3150 → «31.50 EUR»), no pinta el crudo (bug ×100)', async () => {
+    const el = await montar();
+    const cols = (el as unknown as { columns: { key: string; format?: (r: unknown) => string }[] }).columns;
+    const total = cols.find((c) => c.key === 'total_amount');
+    expect(total?.format, 'la columna total no tiene formato de dinero').toBeTruthy();
+    expect(total!.format!({ total_amount: 3150, currency: 'EUR' })).toBe('31.50 EUR');
+  });
+
+  it('los artículos salen en lógico (2000000 µ → «2»), no en µ crudos', async () => {
+    const el = await montar();
+    const cols = (el as unknown as { columns: { key: string; format?: (r: unknown) => string }[] }).columns;
+    const items = cols.find((c) => c.key === 'total_items');
+    expect(items!.format!({ total_items: 2_000_000 })).toBe('2');
   });
 });
