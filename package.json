@@ -1,7 +1,7 @@
 {
   "name": "@erplora/module-cart-checkout",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.10",
   "type": "module",
   "description": "Módulo cart_checkout (manifest declarativo + Web Component Lit): carritos con ciclo de vida (active/abandoned/converted/expired), líneas con variantes y el pipeline de checkout (initiated→paid→completed). El motor de totales, contador de order_number y máquina de estados van a WASM. Se compila con @erplora/module-cli.",
   "dependencies": {
