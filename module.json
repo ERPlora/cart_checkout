@@ -1,7 +1,7 @@
 {
   "id": "cart_checkout",
   "name": "Cart & Checkout",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Shopping cart and checkout flow: add items, run checkout and turn carts into paid orders.",
   "agent": {
     "description": "Manages shopping carts and the checkout process: add/remove items, initiate checkout, create orders, and mark payments.",
@@ -495,6 +495,23 @@
         "commands/_convert_cart.sql"
       ]
     }
+  },
+  "events": {
+    "listen": {},
+    "emits": [
+      "cart_checkout.cart.abandoned",
+      "cart_checkout.cart.cleared",
+      "cart_checkout.cart.created",
+      "cart_checkout.cart.deleted",
+      "cart_checkout.carts.expired",
+      "cart_checkout.checkout.initiated",
+      "cart_checkout.item.added",
+      "cart_checkout.item.removed",
+      "cart_checkout.item.updated",
+      "cart_checkout.order.completed",
+      "cart_checkout.order.failed",
+      "cart_checkout.order.paid"
+    ]
   },
   "ui": {
     "entry": "dist/cart_checkout.esm.js"
