@@ -22,8 +22,8 @@
 
 use erplora_guest_sdk::money;
 use erplora_guest_sdk::units::QUANTITY_SCALE;
-use rust_decimal::Decimal;
 use erplora_guest_sdk::{Event, Operation, Output};
+use rust_decimal::Decimal;
 use serde_json::{json, Map, Value};
 
 #[cfg(feature = "guest")]
@@ -79,7 +79,6 @@ fn to_fn_result(r: Result<Output, String>) -> FnResult<Json<Output>> {
 
 // El DINERO lo calcula `erplora_guest_sdk::money` (ADR-0123): una sola implementación.
 
-
 fn as_str(v: &Value) -> String {
     match v {
         Value::String(s) => s.clone(),
@@ -95,7 +94,11 @@ fn str_field(p: &Value, k: &str) -> String {
 
 fn str_or(p: &Value, k: &str, d: &str) -> String {
     let s = str_field(p, k);
-    if s.is_empty() { d.to_string() } else { s }
+    if s.is_empty() {
+        d.to_string()
+    } else {
+        s
+    }
 }
 
 /// Entero estricto (Number entero o String parseable a entero). `None` si no lo es.
@@ -130,7 +133,11 @@ fn json_text(p: &Value, k: &str, default: &str) -> String {
 fn day_from_now(now: &str) -> String {
     let date = now.split('T').next().unwrap_or("");
     let digits: String = date.chars().filter(|c| c.is_ascii_digit()).collect();
-    if digits.len() >= 8 { digits[..8].to_string() } else { "00000000".to_string() }
+    if digits.len() >= 8 {
+        digits[..8].to_string()
+    } else {
+        "00000000".to_string()
+    }
 }
 
 struct Ctx {
@@ -152,7 +159,10 @@ fn split_input(input: &Value) -> (Value, Ctx) {
         .collect();
     let ctx = Ctx {
         now: context.get("now").map(as_str).unwrap_or_default(),
-        user_id: context.get("current_user_id").map(as_str).unwrap_or_default(),
+        user_id: context
+            .get("current_user_id")
+            .map(as_str)
+            .unwrap_or_default(),
         new_ids,
     };
     (payload, ctx)
@@ -163,7 +173,11 @@ fn cc_event(name: &str, user_id: &str, mut extra: Map<String, Value>) -> Event {
     extra.insert("sender".into(), json!("cart_checkout"));
     extra.insert(
         "performed_by_id".into(),
-        if user_id.is_empty() { Value::Null } else { json!(user_id) },
+        if user_id.is_empty() {
+            Value::Null
+        } else {
+            json!(user_id)
+        },
     );
     Event::new(name, Value::Object(extra))
 }
@@ -195,7 +209,10 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
         .filter(|p| *p >= 0)
         .ok_or_else(|| "invalid_price: debe ser céntimos >= 0".to_string())?;
     // La cantidad es punto fijo 10⁶ (ADR-0147); el dinero se multiplica por la LÓGICA exacta.
-    let line_total = money::mul_qty(unit_price, Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE));
+    let line_total = money::mul_qty(
+        unit_price,
+        Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE),
+    );
 
     let item_id = ctx.new_ids.first().cloned().unwrap_or_default();
     if item_id.is_empty() {
@@ -212,7 +229,10 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
     ins.insert("quantity".into(), json!(quantity));
     ins.insert("unit_price".into(), json!(unit_price)); // céntimos
     ins.insert("line_total".into(), json!(line_total)); // céntimos
-    ins.insert("variant_attributes".into(), json!(json_text(&payload, "variant_attributes", "{}")));
+    ins.insert(
+        "variant_attributes".into(),
+        json!(json_text(&payload, "variant_attributes", "{}")),
+    );
 
     let mut recalc = Map::new();
     recalc.insert("session_token".into(), json!(session_token));
@@ -230,6 +250,7 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
             Operation::sql("cart_checkout._recalc_totals_by_token", recalc),
         ],
         events: vec![cc_event("cart_checkout.item.added", &ctx.user_id, ev)],
+        ..Default::default()
     })
 }
 
@@ -238,7 +259,10 @@ pub fn add_to_cart_pure(input: Value) -> Result<Output, String> {
 /// La fila de la línea pre-cargada por el runtime (read `cart_checkout.items.get`, filtrada por
 /// `payload.item_id`). Acepta las dos formas del canal (`[…]` o `{rows:[…]}`), como sales.
 fn preloaded_item(input: &Value) -> Option<Value> {
-    let node = input.get("context")?.get("reads")?.get("cart_checkout.items.get")?;
+    let node = input
+        .get("context")?
+        .get("reads")?
+        .get("cart_checkout.items.get")?;
     let arr = match node {
         Value::Array(a) => Some(a),
         Value::Object(_) => node.get("rows").and_then(|v| v.as_array()),
@@ -276,7 +300,10 @@ pub fn update_cart_item_pure(input: Value) -> Result<Output, String> {
             .map(|v| money::from_json(v, -1))
             .filter(|p| *p >= 0)
             .ok_or_else(|| "invalid_price: la fila no trae unit_price".to_string())?;
-        let line_total = money::mul_qty(unit_price, Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE));
+        let line_total = money::mul_qty(
+            unit_price,
+            Decimal::from(quantity) / Decimal::from(QUANTITY_SCALE),
+        );
         op_params.insert("quantity".into(), json!(quantity));
         op_params.insert("line_total".into(), json!(line_total)); // céntimos
         Operation::sql("cart_checkout._update_item_qty", op_params)
@@ -296,6 +323,7 @@ pub fn update_cart_item_pure(input: Value) -> Result<Output, String> {
             Operation::sql("cart_checkout._recalc_totals_by_item", recalc),
         ],
         events: vec![cc_event("cart_checkout.item.updated", &ctx.user_id, ev)],
+        ..Default::default()
     })
 }
 
@@ -325,6 +353,7 @@ pub fn clear_cart_pure(input: Value) -> Result<Output, String> {
             Operation::sql("cart_checkout._recalc_totals_by_token", recalc),
         ],
         events: vec![cc_event("cart_checkout.cart.cleared", &ctx.user_id, ev)],
+        ..Default::default()
     })
 }
 
@@ -341,6 +370,7 @@ pub fn cleanup_expired_carts_pure(input: Value) -> Result<Output, String> {
     Ok(Output {
         operations: vec![Operation::sql("cart_checkout._expire_carts", Map::new())],
         events: vec![cc_event("cart_checkout.carts.expired", &ctx.user_id, ev)],
+        ..Default::default()
     })
 }
 
@@ -371,7 +401,9 @@ pub fn initiate_checkout_pure(input: Value) -> Result<Output, String> {
     // Fallback legacy: billing_address ← shipping_address si no viene.
     let shipping_address = json_text(&payload, "shipping_address", "{}");
     let billing_address = match payload.get("billing_address") {
-        Some(Value::Object(_)) | Some(Value::Array(_)) => json_text(&payload, "billing_address", "{}"),
+        Some(Value::Object(_)) | Some(Value::Array(_)) => {
+            json_text(&payload, "billing_address", "{}")
+        }
         Some(Value::String(s)) if !s.trim().is_empty() => s.clone(),
         _ => shipping_address.clone(),
     };
@@ -389,8 +421,14 @@ pub fn initiate_checkout_pure(input: Value) -> Result<Output, String> {
     ins.insert("customer_email".into(), json!(customer_email));
     ins.insert("shipping_address".into(), json!(shipping_address));
     ins.insert("billing_address".into(), json!(billing_address));
-    ins.insert("shipping_method".into(), json!(str_or(&payload, "shipping_method", "")));
-    ins.insert("payment_method".into(), json!(str_or(&payload, "payment_method", "")));
+    ins.insert(
+        "shipping_method".into(),
+        json!(str_or(&payload, "shipping_method", "")),
+    );
+    ins.insert(
+        "payment_method".into(),
+        json!(str_or(&payload, "payment_method", "")),
+    );
     ins.insert("notes".into(), json!(str_or(&payload, "notes", "")));
 
     let mut ev = Map::new();
@@ -403,7 +441,12 @@ pub fn initiate_checkout_pure(input: Value) -> Result<Output, String> {
             Operation::sql("cart_checkout._bump_counter", bump),
             Operation::sql("cart_checkout._insert_checkout", ins),
         ],
-        events: vec![cc_event("cart_checkout.checkout.initiated", &ctx.user_id, ev)],
+        events: vec![cc_event(
+            "cart_checkout.checkout.initiated",
+            &ctx.user_id,
+            ev,
+        )],
+        ..Default::default()
     })
 }
 
@@ -434,6 +477,7 @@ pub fn complete_checkout_pure(input: Value) -> Result<Output, String> {
             Operation::sql("cart_checkout._convert_cart", convert),
         ],
         events: vec![cc_event("cart_checkout.order.completed", &ctx.user_id, ev)],
+        ..Default::default()
     })
 }
 
@@ -478,7 +522,11 @@ mod tests {
         assert_eq!(out.operations[0].command, "cart_checkout._update_item_qty");
         let p = &out.operations[0].params;
         assert_eq!(p["quantity"], json!(2_000_000));
-        assert_eq!(p["line_total"], json!(700), "2 × 3,50 € — lo calcula el handler, no el SQL");
+        assert_eq!(
+            p["line_total"],
+            json!(700),
+            "2 × 3,50 € — lo calcula el handler, no el SQL"
+        );
     }
 
     #[test]
