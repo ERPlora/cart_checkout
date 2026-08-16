@@ -1,5 +1,6 @@
 {
   "name": "Carrito y pago",
+  "description": "Carrito y proceso de pago: añade artículos, cobra y convierte el carrito en un pedido pagado.",
   "navigation": {
     "carts": {
       "label": "Carritos"
