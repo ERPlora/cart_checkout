@@ -1,7 +1,7 @@
 {
   "id": "cart_checkout",
   "name": "Cart & Checkout",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Shopping cart and checkout flow: add items, run checkout and turn carts into paid orders.",
   "agent": {
     "description": "Manages shopping carts and the checkout process: add/remove items, initiate checkout, create orders, and mark payments.",
