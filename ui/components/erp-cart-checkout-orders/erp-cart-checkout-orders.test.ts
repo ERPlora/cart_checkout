@@ -21,6 +21,8 @@ beforeEach(() => {
     locale: 'es',
     t: (_catalog: unknown, key: string) => key,
     currency: 'EUR',
+    // The real client always exposes it (module-sdk getter); the list declares `moneyFilters` (pm#501).
+    currencyDecimals: 2,
     formatMoney: (cents: number) => `${(cents / 100).toFixed(2)} €`,
   };
 });

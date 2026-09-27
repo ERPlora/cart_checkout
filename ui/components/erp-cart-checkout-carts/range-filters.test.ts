@@ -10,6 +10,7 @@
 // Money is scaled with the hub's currency decimals, items with the quantity scale, before the list
 // is asked for; the edges of every other column travel untouched.
 import { beforeEach, describe, expect, it } from 'vitest';
+import { buildListParams } from '@erplora/module-sdk';
 import './erp-cart-checkout-carts';
 
 /** The `filters` of every page the screen asked the hub for, in call order. */
@@ -113,9 +114,11 @@ describe('Carts «Total» range filter compares in the unit the column shows (ca
   });
 
   it('text that is not a number is not turned into «from 0»', async () => {
+    // Judged on what the hub RECEIVES (`buildListParams`, what the real `queryPage` sends): the SDK
+    // keeps the unscalable edge until it flattens, and it travels as nothing, never as 0 (pm#501).
     const el = await mount();
-    expect(await type(el, 'total_amount', { from: 'abc' })).toEqual({});
-    expect(await type(el, 'total_amount', { to: '   ' })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_amount', { from: 'abc' }) })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_amount', { to: '   ' }) })).toEqual({});
   });
 
   it('a cleared filter (null) clears it, never a crash', async () => {
@@ -158,12 +161,22 @@ describe('Carts «Items» range filter compares in the unit the column shows (ca
   });
 
   it('an empty, blank or invalid edge is dropped instead of filtering «from 0» or sending the raw text', async () => {
+    // Judged on what the hub RECEIVES (`buildListParams`, what the real `queryPage` sends): the SDK
+    // keeps the unscalable edge until it flattens, and it travels as nothing, never as 0 (pm#501).
     const el = await mount();
     await type(el, 'total_items', { from: 2 });
     expect(await type(el, 'total_items', { from: '' })).toEqual({});
-    expect(await type(el, 'total_items', { from: 'abc' })).toEqual({});
-    expect(await type(el, 'total_items', { to: '   ' })).toEqual({});
-    expect(await type(el, 'total_items', { to: '-1' })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_items', { from: 'abc' }) })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_items', { to: '   ' }) })).toEqual({});
+  });
+
+  it('a negative edge is scaled like any number, never sent as raw text: «to -1» asks for −1 000 000 µ', async () => {
+    // The SDK compares what was typed (pm#501, the contract of every list): «up to −1 items» matches
+    // no cart, which is the literal answer — the old local copy silently dropped it and showed all.
+    const el = await mount();
+    expect(buildListParams({ filters: await type(el, 'total_items', { to: '-1' }) })).toEqual({
+      f_total_items_to: -1_000_000,
+    });
   });
 
   it('a cleared filter (null) clears it, never a crash', async () => {
@@ -191,5 +204,19 @@ describe('Carts: every other column travels untouched (cart_checkout#26)', () =>
     const el = await mount();
     expect(await type(el, 'created_at', { from: '2026-09-01' })).toEqual({ created_at: { from: '2026-09-01' } });
     expect(await type(el, 'status', 'active')).toEqual({ created_at: { from: '2026-09-01' }, status: 'active' });
+  });
+
+  it('every other filterable column of the table travels untouched: none is scaled as money or quantity (pm#501)', async () => {
+    const el = await mount();
+    const table = el.shadowRoot.querySelector('ok-data-table') as unknown as { columns: Array<{ key: string; filterable?: boolean; filterType?: string; options?: Array<{ value: string }> }> };
+    const others = table.columns.filter((c) => c.filterable && !['total_amount', 'total_items'].includes(c.key));
+    expect(others.length).toBeGreaterThan(2);
+    for (const c of others) {
+      // What the table emits for each kind of filter: a date/number range, a picked value, typed text.
+      const value = c.filterType === 'range' ? { from: '2026-09-01' } : c.filterType === 'select' ? c.options![0].value : '12';
+      const sent = await type(el, c.key, value);
+      expect(sent[c.key], c.key).toEqual(value);
+      await type(el, c.key, null);
+    }
   });
 });

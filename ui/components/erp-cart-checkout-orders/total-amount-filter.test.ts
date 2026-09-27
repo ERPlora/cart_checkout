@@ -8,6 +8,7 @@
 // What the table types (major unit) is scaled to the minor unit with the hub's currency decimals
 // before the list is asked for; the edges of every other column travel untouched.
 import { beforeEach, describe, expect, it } from 'vitest';
+import { buildListParams } from '@erplora/module-sdk';
 import './erp-cart-checkout-orders';
 
 /** The `filters` of every page the screen asked the hub for, in call order. */
@@ -103,9 +104,11 @@ describe('Orders «Total» range filter compares in the unit the column shows (c
   });
 
   it('text that is not a number is not turned into «from 0»', async () => {
+    // Judged on what the hub RECEIVES (`buildListParams`, what the real `queryPage` sends): the SDK
+    // keeps the unscalable edge until it flattens, and it travels as nothing, never as 0 (pm#501).
     const el = await mount();
-    expect(await type(el, 'total_amount', { from: 'abc' })).toEqual({});
-    expect(await type(el, 'total_amount', { to: '   ' })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_amount', { from: 'abc' }) })).toEqual({});
+    expect(buildListParams({ filters: await type(el, 'total_amount', { to: '   ' }) })).toEqual({});
   });
 
   it('a cleared filter (null) clears it, never a crash', async () => {
@@ -137,5 +140,19 @@ describe('Orders «Total» range filter compares in the unit the column shows (c
     const el = await mount();
     expect(await type(el, 'placed_at', { from: '2026-09-01' })).toEqual({ placed_at: { from: '2026-09-01' } });
     expect(await type(el, 'order_number', '12')).toEqual({ placed_at: { from: '2026-09-01' }, order_number: '12' });
+  });
+
+  it('every other filterable column of the table travels untouched: none is scaled as money or quantity (pm#501)', async () => {
+    const el = await mount();
+    const table = el.shadowRoot.querySelector('ok-data-table') as unknown as { columns: Array<{ key: string; filterable?: boolean; filterType?: string; options?: Array<{ value: string }> }> };
+    const others = table.columns.filter((c) => c.filterable && !['total_amount'].includes(c.key));
+    expect(others.length).toBeGreaterThan(2);
+    for (const c of others) {
+      // What the table emits for each kind of filter: a date/number range, a picked value, typed text.
+      const value = c.filterType === 'range' ? { from: '2026-09-01' } : c.filterType === 'select' ? c.options![0].value : '12';
+      const sent = await type(el, c.key, value);
+      expect(sent[c.key], c.key).toEqual(value);
+      await type(el, c.key, null);
+    }
   });
 });

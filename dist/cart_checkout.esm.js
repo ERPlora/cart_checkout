@@ -3719,6 +3719,12 @@ __decorateClass3([
 var OkDataTable = _OkDataTable;
 define("ok-data-table", OkDataTable);
 
+// @erplora/module-sdk/src/quantity.ts
+var QUANTITY_SCALE = 1e6;
+function toMicro(quantity) {
+  return Math.round(quantity * QUANTITY_SCALE);
+}
+
 // @erplora/module-sdk/src/index.ts
 function isEmpty(v3) {
   return v3 === null || v3 === void 0 || v3 === "";
@@ -3744,6 +3750,29 @@ var ListController = class {
       filters: { ...opts.filters ?? {} },
       context: { ...opts.context ?? {} }
     };
+    this.moneyFilters = new Set(opts.moneyFilters ?? []);
+    this.quantityFilters = new Set(opts.quantityFilters ?? []);
+    if (this.moneyFilters.size > 0 && typeof client.currencyDecimals !== "number") {
+      throw new ErploraError(
+        "list_money_filters_need_currency_decimals",
+        "moneyFilters needs a list client that exposes currencyDecimals"
+      );
+    }
+  }
+  /**
+   * The filters as the runtime compares them: money and quantity columns scaled from what the
+   * person typed to the stored integer. `state.filters` stays as typed, so a table that echoes it
+   * back keeps showing «12», not «1200».
+   */
+  wireFilters() {
+    if (this.moneyFilters.size === 0 && this.quantityFilters.size === 0) return this.state.filters;
+    const decimals = this.client.currencyDecimals ?? 0;
+    const out = {};
+    for (const [col, value] of Object.entries(this.state.filters)) {
+      const scale = this.moneyFilters.has(col) ? (n6) => majorToMinor(n6, decimals) : this.quantityFilters.has(col) ? toMicro : null;
+      out[col] = scale ? scaleFilterValue(value, scale) : value;
+    }
+    return out;
   }
   /** Nº de páginas según el total del servidor (mínimo 1). */
   get pageCount() {
@@ -3763,7 +3792,7 @@ var ListController = class {
         search: s5.search,
         sort: s5.sort,
         dir: s5.dir,
-        filters: s5.filters,
+        filters: this.wireFilters(),
         params: s5.context
       });
       if (mySeq !== this.seq) return;
@@ -3832,10 +3861,33 @@ var ListController = class {
     void this.load();
   }
 };
+function scaleFilterEdge(edge, scale) {
+  const text = typeof edge === "string" ? edge.trim().replace(",", ".") : edge;
+  if (text === "" || text === null || text === void 0) return "";
+  const n6 = Number(text);
+  return Number.isFinite(n6) ? scale(n6) : "";
+}
+function scaleFilterValue(value, scale) {
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([edge, v3]) => [edge, scaleFilterEdge(v3, scale)])
+    );
+  }
+  return scaleFilterEdge(value, scale);
+}
 function createListController(client, queryName, onChange = () => {
 }, opts = {}) {
   return new ListController(client, queryName, onChange, opts);
 }
+var ErploraError = class extends Error {
+  constructor(code, message, permission, fields) {
+    super(message);
+    this.code = code;
+    this.permission = permission;
+    this.fields = fields;
+    this.name = "ErploraError";
+  }
+};
 function majorToMinor(amount, decimals) {
   const n6 = Number(amount);
   return Number.isFinite(n6) ? Math.round(n6 * 10 ** decimals) : 0;
@@ -3845,12 +3897,6 @@ function majorToMinor(amount, decimals) {
 var QUANTITY_SCALE2 = 1e6;
 function fromMicro2(raw) {
   return raw / QUANTITY_SCALE2;
-}
-function parseQuantity2(text) {
-  const t5 = text.trim().replace(",", ".");
-  if (!/^\d+(\.\d{1,6})?$/.test(t5)) return null;
-  const raw = Math.round(parseFloat(t5) * QUANTITY_SCALE2);
-  return Number.isSafeInteger(raw) && raw >= 0 ? raw : null;
 }
 function formatQuantity2(raw) {
   return String(fromMicro2(raw));
@@ -3965,29 +4011,6 @@ var STATUS_KEYS = {
   converted: "ui.statusConverted",
   expired: "ui.statusExpired"
 };
-var MONEY_RANGE_FILTERS = /* @__PURE__ */ new Set(["total_amount"]);
-function moneyEdgeToMinor(edge, decimals) {
-  const text = typeof edge === "string" ? edge.trim().replace(",", ".") : edge;
-  if (text === "" || text === null || text === void 0) return "";
-  const n6 = Number(text);
-  return Number.isFinite(n6) ? majorToMinor(n6, decimals) : "";
-}
-function moneyRangeToMinor(value, decimals) {
-  if (value === null || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([edge, v3]) => [edge, moneyEdgeToMinor(v3, decimals)])
-  );
-}
-var QUANTITY_RANGE_FILTERS = /* @__PURE__ */ new Set(["total_items"]);
-function quantityEdgeToMicro(edge) {
-  return parseQuantity2(String(edge)) ?? "";
-}
-function quantityRangeToMicro(value) {
-  if (value === null || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([edge, v3]) => [edge, quantityEdgeToMicro(v3)])
-  );
-}
 function erplora() {
   const c5 = globalThis.erplora;
   if (!c5) throw new Error("erplora SDK no inicializado por el shell");
@@ -4035,8 +4058,10 @@ var ErpCartCheckoutCarts = class extends i3 {
         options: Object.entries(STATUS_KEYS).map(([value, key]) => ({ value, label: t5(key) })),
         format: (r6) => STATUS_KEYS[r6.status] ? t5(STATUS_KEYS[r6.status]) : r6.status
       },
-      // total_items es µ (punto fijo 10⁶, ADR-0147) y total_amount CÉNTIMOS (ADR-0123): la
-      // pantalla habla lógico/euros. El `toFixed(2)` sobre el crudo pintaba 3150 → «3150.00».
+      // total_items is µ (fixed point 10⁶, ADR-0147) and total_amount CENTS (ADR-0123): the screen
+      // speaks logical units / euros. `toFixed(2)` over the raw value painted 3150 → «3150.00».
+      // Their range filters are declared to the list controller below (`quantityFilters` /
+      // `moneyFilters`, pm#501), so «2» and «12» are scaled to what the dispatcher compares.
       { key: "total_items", header: t5("ui.colItems"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => formatQuantity2(Number(r6.total_items ?? 0)) },
       { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => erplora().formatMoney(Number(r6.total_amount || 0), { currency: r6.currency || void 0 }) }
     ];
@@ -4054,7 +4079,9 @@ var ErpCartCheckoutCarts = class extends i3 {
     this.ctrl = createListController(erplora(), "cart_checkout.carts.list", () => this.requestUpdate(), {
       pageSize: 50,
       sort: "created_at",
-      dir: "desc"
+      dir: "desc",
+      moneyFilters: ["total_amount"],
+      quantityFilters: ["total_items"]
     });
     await this.ctrl.load();
     try {
@@ -4106,13 +4133,6 @@ var ErpCartCheckoutCarts = class extends i3 {
       this.saving = false;
     }
   }
-  /** A column filter from the table: money ranges travel in the minor unit (pm#498), item
-   *  ranges in µ (ADR-0147); the field keeps showing what was typed. */
-  onFilterChange(col, value) {
-    if (MONEY_RANGE_FILTERS.has(col)) this.ctrl.setFilter(col, moneyRangeToMinor(value, erplora().currencyDecimals));
-    else if (QUANTITY_RANGE_FILTERS.has(col)) this.ctrl.setFilter(col, quantityRangeToMicro(value));
-    else this.ctrl.setFilter(col, value);
-  }
   async onRowAction(ev) {
     const { actionId, row } = ev.detail;
     const cartId = row.id;
@@ -4134,7 +4154,7 @@ var ErpCartCheckoutCarts = class extends i3 {
     return b2`<div class="page">
         ${this.formError ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : A}
         ${this.ctrl?.error ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : A}
-        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.customer_email || r6.session_token || "\u2014")} .cardIcon=${() => "cart-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @pageSizeChange=${(e5) => this.ctrl.setPageSize(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.onFilterChange(e5.detail.col, e5.detail.value)}>
+        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.customer_email || r6.session_token || "\u2014")} .cardIcon=${() => "cart-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @pageSizeChange=${(e5) => this.ctrl.setPageSize(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}>
           <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
                pintara al abrirlo, el «+» desplegaría un panel vacío en el primer clic. -->
           <form slot="create" class="form" @submit=${(e5) => this.createCart(e5)}>
@@ -4175,19 +4195,6 @@ var STATUS_KEYS2 = {
   failed: "ui.statusFailed",
   completed: "ui.statusCompleted"
 };
-var MONEY_RANGE_FILTERS2 = /* @__PURE__ */ new Set(["total_amount"]);
-function moneyEdgeToMinor2(edge, decimals) {
-  const text = typeof edge === "string" ? edge.trim().replace(",", ".") : edge;
-  if (text === "" || text === null || text === void 0) return "";
-  const n6 = Number(text);
-  return Number.isFinite(n6) ? majorToMinor(n6, decimals) : "";
-}
-function moneyRangeToMinor2(value, decimals) {
-  if (value === null || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([edge, v3]) => [edge, moneyEdgeToMinor2(v3, decimals)])
-  );
-}
 function erplora2() {
   const c5 = globalThis.erplora;
   if (!c5) throw new Error("erplora SDK no inicializado por el shell");
@@ -4228,8 +4235,9 @@ var ErpCartCheckoutOrders = class extends i3 {
         format: (r6) => STATUS_KEYS2[r6.status] ? t5(STATUS_KEYS2[r6.status]) : r6.status
       },
       { key: "payment_method", header: t5("ui.colPayment"), sortable: true, filterable: true, filterType: "text", format: (r6) => r6.payment_method || "\u2014" },
-      // total_amount es CÉNTIMOS (ADR-0123): formatMoney divide. El toFixed(2) directo
-      // pintaba 3150 → «3150.00» (bug ×100, issue #9).
+      // total_amount is CENTS (ADR-0123): formatMoney divides. A bare toFixed(2) painted
+      // 3150 → «3150.00» (×100 bug, issue #9). Its range filter is declared in `moneyFilters`
+      // below (pm#501), so «12» travels as 1200.
       { key: "total_amount", header: t5("ui.colTotal"), align: "right", sortable: true, filterable: true, filterType: "range", format: (r6) => erplora2().formatMoney(Number(r6.total_amount || 0)) }
     ];
   }
@@ -4247,7 +4255,8 @@ var ErpCartCheckoutOrders = class extends i3 {
     this.ctrl = createListController(erplora2(), "cart_checkout.orders.list", () => this.requestUpdate(), {
       pageSize: 50,
       sort: "created_at",
-      dir: "desc"
+      dir: "desc",
+      moneyFilters: ["total_amount"]
     });
     await this.ctrl.load();
     try {
@@ -4268,10 +4277,6 @@ var ErpCartCheckoutOrders = class extends i3 {
     window.removeEventListener("erplora:locale-changed", this.onLocaleChange);
     super.disconnectedCallback();
     this.unsub?.();
-  }
-  /** A column filter from the table: money ranges travel in the minor unit (pm#498). */
-  onFilterChange(col, value) {
-    this.ctrl.setFilter(col, MONEY_RANGE_FILTERS2.has(col) ? moneyRangeToMinor2(value, erplora2().currencyDecimals) : value);
   }
   async onRowAction(ev) {
     const { actionId, row } = ev.detail;
@@ -4298,7 +4303,7 @@ var ErpCartCheckoutOrders = class extends i3 {
         </header>
         ${this.formError ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : A}
         ${this.ctrl?.error ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : A}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.order_number ?? "\u2014")} .cardIcon=${() => "receipt-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchOrders")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyOrders")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.onFilterChange(e5.detail.col, e5.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.order_number ?? "\u2014")} .cardIcon=${() => "receipt-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchOrders")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyOrders")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}></ok-data-table>
       </div>`;
   }
 };
