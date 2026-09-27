@@ -4,7 +4,7 @@ import { define } from '@erplora/outfitkit/define';
 import '@erplora/outfitkit/ok-inline-feedback';
 import '@erplora/outfitkit/ok-data-table';
 import type { DataTableColumn, DataTableAction } from '@erplora/outfitkit';
-import { createListController } from '@erplora/module-sdk';
+import { createListController, majorToMinor } from '@erplora/module-sdk';
 import type { ListController, ListClient, ListParams, ListPage } from '@erplora/module-sdk';
 // Catálogo i18n del módulo (ADR-0055): esbuild inlinea estos JSON en el `dist` del WC. Los textos
 // internos se resuelven con `erplora.t(CATALOG, 'ui.clave')` (idioma activo, fallback locale→en→clave).
@@ -22,6 +22,8 @@ interface ErploraClientLike extends ListClient {
   t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
   /** Dinero (ADR-0059/0123): `formatMoney` recibe CÉNTIMOS y divide según la moneda. */
   currency: string;
+  /** Decimals of the hub currency (2 EUR, 0 JPY, 3 KWD): the scale of a typed money filter. */
+  currencyDecimals: number;
   formatMoney(cents: number, opts?: { currency?: string; locale?: string }): string;
 }
 
@@ -45,6 +47,33 @@ const STATUS_KEYS: Record<string, string> = {
   failed: 'ui.statusFailed',
   completed: 'ui.statusCompleted',
 };
+
+/**
+ * Columns whose `range` filter is money (pm#498). The column paints the INTEGER in the minor unit
+ * as money of the hub («12,10 €»), so the person types the major unit («12»); the dispatcher
+ * compares against the integer, so each edge is scaled before the list is asked for.
+ */
+const MONEY_RANGE_FILTERS = new Set(['total_amount']);
+
+/**
+ * One typed edge of a money range → minor units, with the hub's currency decimals. The table emits
+ * a Number from the panel and text from the inline control («12,5» included). Empty or not a
+ * number → `''`, which the list controller drops: a stray keystroke never becomes «from 0».
+ */
+function moneyEdgeToMinor(edge: unknown, decimals: number): number | '' {
+  const text = typeof edge === 'string' ? edge.trim().replace(',', '.') : edge;
+  if (text === '' || text === null || text === undefined) return '';
+  const n = Number(text);
+  return Number.isFinite(n) ? majorToMinor(n, decimals) : '';
+}
+
+/** The `{ from?, to? }` a money range emits, scaled edge by edge; any other shape travels as is. */
+function moneyRangeToMinor(value: unknown, decimals: number): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([edge, v]) => [edge, moneyEdgeToMinor(v, decimals)]),
+  );
+}
 
 function erplora(): ErploraClientLike {
   const c = (globalThis as { erplora?: ErploraClientLike }).erplora;
@@ -136,6 +165,11 @@ export class ErpCartCheckoutOrders extends LitElement {
     this.unsub?.();
   }
 
+  /** A column filter from the table: money ranges travel in the minor unit (pm#498). */
+  private onFilterChange(col: string, value: unknown): void {
+    this.ctrl.setFilter(col, MONEY_RANGE_FILTERS.has(col) ? moneyRangeToMinor(value, erplora().currencyDecimals) : value);
+  }
+
   private async onRowAction(ev: CustomEvent<{ actionId: string; row: Record<string, unknown> }>) {
     const { actionId, row } = ev.detail;
     const checkoutId = row.id as string;
@@ -162,7 +196,7 @@ export class ErpCartCheckoutOrders extends LitElement {
         </header>
         ${this.formError ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : nothing}
         ${this.ctrl?.error ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : nothing}
-        <ok-data-table .serverSide=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r: Record<string, unknown>) => String(r.order_number ?? '—')} .cardIcon=${() => 'receipt-outline'} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchOrders')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyOrders')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}></ok-data-table>
+        <ok-data-table .serverSide=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r: Record<string, unknown>) => String(r.order_number ?? '—')} .cardIcon=${() => 'receipt-outline'} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchOrders')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyOrders')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.onFilterChange(e.detail.col, e.detail.value)}></ok-data-table>
       </div>`;
   }
 }

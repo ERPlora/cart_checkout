@@ -4,10 +4,10 @@ import { define } from '@erplora/outfitkit/define';
 import '@erplora/outfitkit/ok-inline-feedback';
 import '@erplora/outfitkit/ok-data-table';
 import type { DataTableColumn, DataTableAction } from '@erplora/outfitkit';
-import { createListController } from '@erplora/module-sdk';
+import { createListController, majorToMinor } from '@erplora/module-sdk';
 import type { ListController, ListClient, ListParams, ListPage } from '@erplora/module-sdk';
 // Aduana de la escala de cantidades (ADR-0147): la fila trae µ (10⁶), la pantalla habla lógico.
-import { formatQuantity } from '../../lib/quantity';
+import { formatQuantity, parseQuantity } from '../../lib/quantity';
 // Catálogo i18n del módulo (ADR-0055): esbuild inlinea estos JSON en el `dist` del WC. Los textos
 // internos se resuelven con `erplora.t(CATALOG, 'ui.clave')` (idioma activo, fallback locale→en→clave).
 import esLocale from '../../../locales/es.json';
@@ -24,6 +24,8 @@ interface ErploraClientLike extends ListClient {
   t(catalog: Record<string, unknown>, key: string, params?: Record<string, unknown>): string;
   /** Dinero (ADR-0059/0123): `formatMoney` recibe CÉNTIMOS y divide según la moneda. */
   currency: string;
+  /** Decimals of the hub currency (2 EUR, 0 JPY, 3 KWD): the scale of a typed money filter. */
+  currencyDecimals: number;
   formatMoney(cents: number, opts?: { currency?: string; locale?: string }): string;
 }
 
@@ -47,6 +49,54 @@ const STATUS_KEYS: Record<string, string> = {
   converted: 'ui.statusConverted',
   expired: 'ui.statusExpired',
 };
+
+/**
+ * Columns whose `range` filter is money (pm#498). The column paints the INTEGER in the minor unit
+ * as money of the hub («12,10 €»), so the person types the major unit («12»); the dispatcher
+ * compares against the integer, so each edge is scaled before the list is asked for.
+ */
+const MONEY_RANGE_FILTERS = new Set(['total_amount']);
+
+/**
+ * One typed edge of a money range → minor units, with the hub's currency decimals. The table emits
+ * a Number from the panel and text from the inline control («12,5» included). Empty or not a
+ * number → `''`, which the list controller drops: a stray keystroke never becomes «from 0».
+ */
+function moneyEdgeToMinor(edge: unknown, decimals: number): number | '' {
+  const text = typeof edge === 'string' ? edge.trim().replace(',', '.') : edge;
+  if (text === '' || text === null || text === undefined) return '';
+  const n = Number(text);
+  return Number.isFinite(n) ? majorToMinor(n, decimals) : '';
+}
+
+/** The `{ from?, to? }` a money range emits, scaled edge by edge; any other shape travels as is. */
+function moneyRangeToMinor(value: unknown, decimals: number): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([edge, v]) => [edge, moneyEdgeToMinor(v, decimals)]),
+  );
+}
+
+/**
+ * Columns whose `range` filter is a quantity in fixed point 10⁶ (ADR-0147). The column paints
+ * «2», so the person types «2»; the dispatcher compares against 2 000 000 µ.
+ */
+const QUANTITY_RANGE_FILTERS = new Set(['total_items']);
+
+/** One typed edge of a quantity range → µ. Empty, blank or not a valid quantity (`null` included:
+ *  `parseQuantity` rejects «null») → `''`, which the list controller drops, never the raw text nor
+ *  «from 0». */
+function quantityEdgeToMicro(edge: unknown): number | '' {
+  return parseQuantity(String(edge)) ?? '';
+}
+
+/** The `{ from?, to? }` a quantity range emits, scaled edge by edge; any other shape travels as is. */
+function quantityRangeToMicro(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([edge, v]) => [edge, quantityEdgeToMicro(v)]),
+  );
+}
 
 function erplora(): ErploraClientLike {
   const c = (globalThis as { erplora?: ErploraClientLike }).erplora;
@@ -187,6 +237,14 @@ export class ErpCartCheckoutCarts extends LitElement {
     }
   }
 
+  /** A column filter from the table: money ranges travel in the minor unit (pm#498), item
+   *  ranges in µ (ADR-0147); the field keeps showing what was typed. */
+  private onFilterChange(col: string, value: unknown): void {
+    if (MONEY_RANGE_FILTERS.has(col)) this.ctrl.setFilter(col, moneyRangeToMinor(value, erplora().currencyDecimals));
+    else if (QUANTITY_RANGE_FILTERS.has(col)) this.ctrl.setFilter(col, quantityRangeToMicro(value));
+    else this.ctrl.setFilter(col, value);
+  }
+
   private async onRowAction(ev: CustomEvent<{ actionId: string; row: Record<string, unknown> }>) {
     const { actionId, row } = ev.detail;
     const cartId = row.id as string;
@@ -209,7 +267,7 @@ export class ErpCartCheckoutCarts extends LitElement {
     return html`<div class="page">
         ${this.formError ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : nothing}
         ${this.ctrl?.error ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : nothing}
-        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r: Record<string, unknown>) => String(r.customer_email || r.session_token || '—')} .cardIcon=${() => 'cart-outline'} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @pageSizeChange=${(e: CustomEvent<number>) => this.ctrl.setPageSize(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}>
+        <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r: Record<string, unknown>) => String(r.customer_email || r.session_token || '—')} .cardIcon=${() => 'cart-outline'} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @pageSizeChange=${(e: CustomEvent<number>) => this.ctrl.setPageSize(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.onFilterChange(e.detail.col, e.detail.value)}>
           <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
                pintara al abrirlo, el «+» desplegaría un panel vacío en el primer clic. -->
           <form slot="create" class="form" @submit=${(e: Event) => this.createCart(e)}>
