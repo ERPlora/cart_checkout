@@ -1,4 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit';
+import type { PropertyValues } from 'lit';
 import { state } from 'lit/decorators.js';
 import { define } from '@erplora/outfitkit/define';
 import '@erplora/outfitkit/ok-inline-feedback';
@@ -68,7 +69,11 @@ export class ErpCartCheckoutCarts extends LitElement {
     .err { color:#d9480f; font-weight:600; }
   `;
 
+  /** What «Save» in the «New cart» panel was refused: painted inside that form, never on the page (pm#513). */
   @state() formError = '';
+
+  /** What a row action («Abandon», «Delete») was refused: no panel is open then, so it goes on the page. */
+  @state() pageError = '';
 
   @state() newToken = '';
 
@@ -173,6 +178,7 @@ export class ErpCartCheckoutCarts extends LitElement {
     if (!this.newToken.trim()) return;
     this.saving = true;
     this.formError = '';
+    this.pageError = ''; // a save is the next thing the person did: an older row refusal is stale (staff#75)
     try {
       await erplora().command('cart_checkout.carts.create', {
         session_token: this.newToken.trim(),
@@ -196,7 +202,7 @@ export class ErpCartCheckoutCarts extends LitElement {
   private async onRowAction(ev: CustomEvent<{ actionId: string; row: Record<string, unknown> }>) {
     const { actionId, row } = ev.detail;
     const cartId = row.id as string;
-    this.formError = '';
+    this.pageError = '';
     try {
       if (actionId === 'abandon') {
         await erplora().command('cart_checkout.carts.mark_abandoned', { cart_id: cartId, reason: '' });
@@ -205,15 +211,29 @@ export class ErpCartCheckoutCarts extends LitElement {
       }
       await this.ctrl.load();
     } catch (e) {
-      this.formError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorActionFailed');
+      this.pageError = e instanceof Error ? e.message : erplora().t(CATALOG, 'ui.errorActionFailed');
     }
+  }
+
+  /** pm#513: the refusal appears above the button that was pressed — on a phone that can leave it
+   *  off the sheet. Bring it into view when it appears, not again on every keystroke. */
+  updated(changed: PropertyValues): void {
+    super.updated(changed);
+    if (changed.has('formError') && this.formError) void this.revealRefusal('[data-testid="cart-checkout-carts-form-error"]');
+  }
+
+  /** ok-inline-feedback lays itself out in its own update: scrolled to before it, the box is empty. */
+  private async revealRefusal(selector: string): Promise<void> {
+    const banner = this.renderRoot.querySelector(selector) as (HTMLElement & { updateComplete?: Promise<unknown> }) | null;
+    await banner?.updateComplete;
+    banner?.scrollIntoView?.({ block: 'center' });
   }
 
   // El título de la vista lo pinta el topbar del shell: repetirlo aquí lo duplicaba en pantalla.
   render() {
     const t = (k: string): string => erplora().t(CATALOG, k);
     return html`<div class="page">
-        ${this.formError ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : nothing}
+        ${this.pageError ? html`<ok-inline-feedback data-testid="cart-checkout-carts-error" tone="danger" icon="alert-circle-outline">${this.pageError}</ok-inline-feedback>` : nothing}
         ${this.ctrl?.error ? html`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : nothing}
         <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r: Record<string, unknown>) => String(r.customer_email || r.session_token || '—')} .cardIcon=${() => 'cart-outline'} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? 'desc'} .searchable=${true} .searchPlaceholder=${t('ui.searchCarts')} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t('ui.loading') : t('ui.emptyCarts')} @rowAction=${(e: CustomEvent) => this.onRowAction(e)} @pageChange=${(e: CustomEvent<number>) => this.ctrl.setPage(e.detail)} @pageSizeChange=${(e: CustomEvent<number>) => this.ctrl.setPageSize(e.detail)} @sortChange=${(e: CustomEvent<{ sort: string; dir: 'asc' | 'desc' }>) => this.ctrl.setSort(e.detail.sort, e.detail.dir)} @searchChange=${(e: CustomEvent<string>) => this.ctrl.setSearch(e.detail)} @filterChange=${(e: CustomEvent<{ col: string; value: unknown }>) => this.ctrl.setFilter(e.detail.col, e.detail.value)}>
           <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
@@ -222,6 +242,9 @@ export class ErpCartCheckoutCarts extends LitElement {
             <ion-input fill="outline" label-placement="floating" label=${t('ui.colSession')} placeholder=${t('ui.placeholderSessionToken')} .value=${this.newToken} @ionInput=${(e: any) => (this.newToken = e.target.value)}></ion-input>
             <ion-input fill="outline" label-placement="floating" label=${t('ui.colEmail')} placeholder=${t('ui.placeholderEmailOptional')} .value=${this.newEmail} @ionInput=${(e: any) => (this.newEmail = e.target.value)}></ion-input>
             <ion-input fill="outline" label-placement="floating" label=${t('ui.labelName')} placeholder=${t('ui.placeholderNameOptional')} .value=${this.newName} @ionInput=${(e: any) => (this.newName = e.target.value)}></ion-input>
+            <!-- pm#513: the refusal travels WITH the form — under 834 px the panel is a full-screen
+                 sheet and a notice on the page underneath it is never seen. -->
+            ${this.formError ? html`<ok-inline-feedback data-testid="cart-checkout-carts-form-error" tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : nothing}
             <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t('ui.buttonSaving') : t('ui.buttonSave')}</ion-button>
           </form>
         </ok-data-table>
