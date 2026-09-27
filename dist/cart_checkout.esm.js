@@ -4020,6 +4020,7 @@ var ErpCartCheckoutCarts = class extends i3 {
   constructor() {
     super(...arguments);
     this.formError = "";
+    this.pageError = "";
     this.newToken = "";
     this.newEmail = "";
     this.newName = "";
@@ -4114,6 +4115,7 @@ var ErpCartCheckoutCarts = class extends i3 {
     if (!this.newToken.trim()) return;
     this.saving = true;
     this.formError = "";
+    this.pageError = "";
     try {
       await erplora().command("cart_checkout.carts.create", {
         session_token: this.newToken.trim(),
@@ -4136,7 +4138,7 @@ var ErpCartCheckoutCarts = class extends i3 {
   async onRowAction(ev) {
     const { actionId, row } = ev.detail;
     const cartId = row.id;
-    this.formError = "";
+    this.pageError = "";
     try {
       if (actionId === "abandon") {
         await erplora().command("cart_checkout.carts.mark_abandoned", { cart_id: cartId, reason: "" });
@@ -4145,14 +4147,26 @@ var ErpCartCheckoutCarts = class extends i3 {
       }
       await this.ctrl.load();
     } catch (e5) {
-      this.formError = e5 instanceof Error ? e5.message : erplora().t(CATALOG, "ui.errorActionFailed");
+      this.pageError = e5 instanceof Error ? e5.message : erplora().t(CATALOG, "ui.errorActionFailed");
     }
+  }
+  /** pm#513: the refusal appears above the button that was pressed — on a phone that can leave it
+   *  off the sheet. Bring it into view when it appears, not again on every keystroke. */
+  updated(changed) {
+    super.updated(changed);
+    if (changed.has("formError") && this.formError) void this.revealRefusal('[data-testid="cart-checkout-carts-form-error"]');
+  }
+  /** ok-inline-feedback lays itself out in its own update: scrolled to before it, the box is empty. */
+  async revealRefusal(selector) {
+    const banner = this.renderRoot.querySelector(selector);
+    await banner?.updateComplete;
+    banner?.scrollIntoView?.({ block: "center" });
   }
   // El título de la vista lo pinta el topbar del shell: repetirlo aquí lo duplicaba en pantalla.
   render() {
     const t5 = (k2) => erplora().t(CATALOG, k2);
     return b2`<div class="page">
-        ${this.formError ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : A}
+        ${this.pageError ? b2`<ok-inline-feedback data-testid="cart-checkout-carts-error" tone="danger" icon="alert-circle-outline">${this.pageError}</ok-inline-feedback>` : A}
         ${this.ctrl?.error ? b2`<ok-inline-feedback tone="danger" icon="alert-circle-outline">${this.ctrl.error}</ok-inline-feedback>` : A}
         <ok-data-table .serverSide=${true} .fill=${true} .addable=${true} .columns=${this.columns} .views=${true} .cardTitle=${(r6) => String(r6.customer_email || r6.session_token || "\u2014")} .cardIcon=${() => "cart-outline"} .rows=${this.ctrl?.rows ?? []} .total=${this.ctrl?.total ?? 0} .page=${this.ctrl?.state.page ?? 0} .pageSize=${this.ctrl?.state.pageSize ?? 50} .sort=${this.ctrl?.state.sort} .sortDir=${this.ctrl?.state.dir ?? "desc"} .searchable=${true} .searchPlaceholder=${t5("ui.searchCarts")} .actions=${this.actions} .emptyMessage=${this.ctrl?.loading ? t5("ui.loading") : t5("ui.emptyCarts")} @rowAction=${(e5) => this.onRowAction(e5)} @pageChange=${(e5) => this.ctrl.setPage(e5.detail)} @pageSizeChange=${(e5) => this.ctrl.setPageSize(e5.detail)} @sortChange=${(e5) => this.ctrl.setSort(e5.detail.sort, e5.detail.dir)} @searchChange=${(e5) => this.ctrl.setSearch(e5.detail)} @filterChange=${(e5) => this.ctrl.setFilter(e5.detail.col, e5.detail.value)}>
           <!-- Alta de carrito: se proyecta SIEMPRE (aunque el panel esté cerrado); si solo se
@@ -4161,6 +4175,9 @@ var ErpCartCheckoutCarts = class extends i3 {
             <ion-input fill="outline" label-placement="floating" label=${t5("ui.colSession")} placeholder=${t5("ui.placeholderSessionToken")} .value=${this.newToken} @ionInput=${(e5) => this.newToken = e5.target.value}></ion-input>
             <ion-input fill="outline" label-placement="floating" label=${t5("ui.colEmail")} placeholder=${t5("ui.placeholderEmailOptional")} .value=${this.newEmail} @ionInput=${(e5) => this.newEmail = e5.target.value}></ion-input>
             <ion-input fill="outline" label-placement="floating" label=${t5("ui.labelName")} placeholder=${t5("ui.placeholderNameOptional")} .value=${this.newName} @ionInput=${(e5) => this.newName = e5.target.value}></ion-input>
+            <!-- pm#513: the refusal travels WITH the form — under 834 px the panel is a full-screen
+                 sheet and a notice on the page underneath it is never seen. -->
+            ${this.formError ? b2`<ok-inline-feedback data-testid="cart-checkout-carts-form-error" tone="danger" icon="alert-circle-outline">${this.formError}</ok-inline-feedback>` : A}
             <ion-button type="submit" size="small" ?disabled=${this.saving || !this.newToken}>${this.saving ? t5("ui.buttonSaving") : t5("ui.buttonSave")}</ion-button>
           </form>
         </ok-data-table>
@@ -4170,6 +4187,9 @@ var ErpCartCheckoutCarts = class extends i3 {
 __decorateClass([
   r5()
 ], ErpCartCheckoutCarts.prototype, "formError", 2);
+__decorateClass([
+  r5()
+], ErpCartCheckoutCarts.prototype, "pageError", 2);
 __decorateClass([
   r5()
 ], ErpCartCheckoutCarts.prototype, "newToken", 2);
