@@ -180,6 +180,20 @@ describe('a new cart is created in the hub currency, not in euros (cart_checkout
     expect(sent()!.payload.currency).toBe('EUR');
   });
 
+  it('the total column paints each cart in ITS currency, not the hub one: an older EUR cart in a JPY hub stays in euros', async () => {
+    sdk().currency = 'JPY';
+    sdk().currencyDecimals = 0;
+    const printed: { minor: number; currency?: string }[] = [];
+    sdk().formatMoney = (minor: number, opts?: { currency?: string }) => {
+      printed.push({ minor, currency: opts?.currency });
+      return `${minor} ${opts?.currency ?? '?'}`;
+    };
+    const el = await create();
+    const total = el.columns.find((c) => c.key === 'total_amount');
+    expect(total!.format!({ total_amount: 3150, currency: 'EUR' })).toBe('3150 EUR');
+    expect(printed).toContainEqual({ minor: 3150, currency: 'EUR' });
+  });
+
   it('a euro hub keeps creating carts in EUR', async () => {
     sdk().currency = 'EUR';
     await create();
