@@ -17,7 +17,7 @@
 |---|---|
 | Cart status | `active`, `abandoned`, `converted`, `expired` |
 | Order status | `initiated`, `paid`, `failed`, `completed` |
-| Currency | default `EUR` |
+| Currency | ISO 4217 code; when left out, the hub's currency (`EUR` if the hub never set one) |
 | Quantity | fixed-point integer, scale 10⁶; **≤ 0 removes the line** |
 | Money | integer cents |
 

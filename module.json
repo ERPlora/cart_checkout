@@ -275,7 +275,7 @@
         "cart_checkout.cart.created"
       ],
       "ai": {
-        "description": "Creates a new shopping cart for a customer or session"
+        "description": "Creates a new shopping cart for a customer or session. Leave currency out unless the customer asked for a specific one: the cart then takes the hub's currency"
       }
     },
     "cart_checkout.carts.mark_abandoned": {
