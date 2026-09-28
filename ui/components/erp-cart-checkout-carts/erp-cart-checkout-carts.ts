@@ -184,7 +184,10 @@ export class ErpCartCheckoutCarts extends LitElement {
         session_token: this.newToken.trim(),
         customer_email: this.newEmail.trim(),
         customer_name: this.newName.trim(),
-        currency: 'EUR',
+        // The cart's total is painted in the cart's own currency: it is created in the hub's one. A
+        // literal 'EUR' stored a yen cart as euros (cart_checkout#32). 'EUR' is only the SDK's own
+        // fallback for a shell that does not publish a currency.
+        currency: erplora().currency || 'EUR',
         expires_at: null,
       });
       this.newToken = '';

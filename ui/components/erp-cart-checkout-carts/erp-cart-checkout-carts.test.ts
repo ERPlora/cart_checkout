@@ -134,6 +134,73 @@ describe('el alta sigue funcionando desde el panel', () => {
   });
 });
 
+// ERPlora/cart_checkout#32 — the cart's total is summed and painted in the cart's own `currency`, so a
+// cart has to be created in the HUB's currency. The create payload carried a literal 'EUR': in a JPY
+// hub the new cart was stored as euros and its total painted in euros.
+describe('a new cart is created in the hub currency, not in euros (cart_checkout#32)', () => {
+  const sdk = () => (globalThis as { erplora: Record<string, unknown> }).erplora;
+  const sent = () => comandos.find((c) => c.name === 'cart_checkout.carts.create');
+
+  async function create() {
+    const el = await montar();
+    const wc = el as unknown as { newToken: string; formError: string; createCart: (ev: Event) => Promise<void> };
+    wc.newToken = 'sess_jp1';
+    await wc.createCart(new Event('submit'));
+    return el as unknown as HTMLElement & { formError: string; columns: { key: string; format?: (r: unknown) => string }[] };
+  }
+
+  it('a JPY hub creates the cart in JPY, and the list paints its total in yen', async () => {
+    sdk().currency = 'JPY';
+    sdk().currencyDecimals = 0;
+    const printed: { minor: number; currency?: string }[] = [];
+    sdk().formatMoney = (minor: number, opts?: { currency?: string }) => {
+      printed.push({ minor, currency: opts?.currency });
+      return `${minor} ${opts?.currency ?? '?'}`;
+    };
+    const el = await create();
+    expect(el.formError).toBe('');
+    expect(sent()!.payload.currency, 'a yen cart was created as euros').toBe('JPY');
+
+    // What the command stores comes back in the row: the total column formats it in that currency.
+    const total = el.columns.find((c) => c.key === 'total_amount');
+    expect(total!.format!({ total_amount: 1999, currency: sent()!.payload.currency })).toBe('1999 JPY');
+    expect(printed).toContainEqual({ minor: 1999, currency: 'JPY' });
+  });
+
+  it('a KWD hub creates the cart in KWD', async () => {
+    sdk().currency = 'KWD';
+    sdk().currencyDecimals = 3;
+    await create();
+    expect(sent()!.payload.currency).toBe('KWD');
+  });
+
+  it('a shell that publishes no currency falls back to EUR, like the SDK does', async () => {
+    delete sdk().currency;
+    await create();
+    expect(sent()!.payload.currency).toBe('EUR');
+  });
+
+  it('the total column paints each cart in ITS currency, not the hub one: an older EUR cart in a JPY hub stays in euros', async () => {
+    sdk().currency = 'JPY';
+    sdk().currencyDecimals = 0;
+    const printed: { minor: number; currency?: string }[] = [];
+    sdk().formatMoney = (minor: number, opts?: { currency?: string }) => {
+      printed.push({ minor, currency: opts?.currency });
+      return `${minor} ${opts?.currency ?? '?'}`;
+    };
+    const el = await create();
+    const total = el.columns.find((c) => c.key === 'total_amount');
+    expect(total!.format!({ total_amount: 3150, currency: 'EUR' })).toBe('3150 EUR');
+    expect(printed).toContainEqual({ minor: 3150, currency: 'EUR' });
+  });
+
+  it('a euro hub keeps creating carts in EUR', async () => {
+    sdk().currency = 'EUR';
+    await create();
+    expect(sent()!.payload.currency).toBe('EUR');
+  });
+});
+
 describe('el pie de la tabla manda: cambiar filas/página recarga server-side', () => {
   it('`pageSizeChange` llega al controlador de lista', async () => {
     const el = await montar();
