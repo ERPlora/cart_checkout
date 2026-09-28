@@ -17,7 +17,7 @@ What this file pins, against a REAL Postgres and with the runtime's own order of
   3. An explicit currency still wins: hub in yen + `currency: "USD"` → USD.
   4. A hub that never set its currency → EUR, as before.
   5. A hub whose currency row is empty → EUR too (never an empty currency on the cart).
-  6. TENANCY: the hub's OWN setting — a hub without a currency next to hubs in yen and in dinars
+  6. TENANCY: the hub's OWN `currency` key — a hub without a currency next to hubs in yen and in dinars
      still gets EUR, and the yen hub never gets the dinars.
 
 Usage: tests/cart_currency.postgres.test.py   (exit 0 = green)
@@ -121,14 +121,18 @@ def create_cart(hub: str, payload: dict) -> str:
     ).strip()
 
 
-def set_currency(hub: str, code: str) -> None:
+def set_setting(hub: str, key: str, value: str) -> None:
     psql(
         [
             "-c",
-            f"INSERT INTO hub_settings (hub_id, key, value) VALUES ({literal(hub)}, 'currency', {literal(code)})",
+            f"INSERT INTO hub_settings (hub_id, key, value) VALUES ({literal(hub)}, {literal(key)}, {literal(value)})",
         ],
         db=DB,
     )
+
+
+def set_currency(hub: str, code: str) -> None:
+    set_setting(hub, "currency", code)
 
 
 def main() -> int:
@@ -159,6 +163,11 @@ def main() -> int:
             ],
             db=DB,
         )
+        # A real hub keeps many settings next to `currency` (country, timezone, decimals…): the
+        # lookup must pick the `currency` key, not "the hub's only row".
+        for hub in ("hub-yen", "hub-dinar", "hub-blank", "hub-plain"):
+            set_setting(hub, "country_code", "ES")
+            set_setting(hub, "timezone", "Europe/Madrid")
         set_currency("hub-yen", "JPY")
         set_currency("hub-dinar", "KWD")
         set_currency("hub-blank", "")
