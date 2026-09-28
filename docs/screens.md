@@ -11,7 +11,7 @@ Open a cart for its full detail including its lines (`cart_checkout.carts.get`),
 their own (`cart_checkout.items.list`).
 
 A cart carries a **session token** (unique per hub), the customer's email and name, the currency
-(`EUR` by default), an expiry, the time of last activity, notes, and its denormalised totals.
+(the hub's currency unless the caller names another), an expiry, the time of last activity, notes, and its denormalised totals.
 
 ### Create a cart
 

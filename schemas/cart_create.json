@@ -8,7 +8,13 @@
     "session_token": { "type": "string", "minLength": 1, "maxLength": 128 },
     "customer_email": { "type": "string", "default": "", "maxLength": 255 },
     "customer_name": { "type": "string", "default": "", "maxLength": 255 },
-    "currency": { "type": "string", "default": "EUR", "minLength": 3, "maxLength": 3 },
+    "currency": {
+      "type": ["string", "null"],
+      "default": null,
+      "minLength": 3,
+      "maxLength": 3,
+      "description": "ISO 4217 code. Leave it out to use the hub's currency (hub setting `currency`)."
+    },
     "expires_at": { "type": ["string", "null"], "format": "date-time", "default": null }
   }
 }
