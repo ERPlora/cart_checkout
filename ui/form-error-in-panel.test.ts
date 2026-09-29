@@ -106,11 +106,22 @@ const CREATE = 'form[slot="create"]';
 const inside = (el: Wc, scope: string, testid: string): Element | null =>
   el.shadowRoot.querySelector(`${scope} [data-testid="${testid}"]`);
 
-/** Every place a notice with `text` is painted in, by where it sits. */
+/**
+ * Every place a notice with `text` is painted in, by where it sits. A list that does not
+ * load hands its reason to the table's own `error` state when the loaded outfitkit has one
+ * (pm#533), so such a table counts as a place too; an older table ignores the property and
+ * paints nothing, so there it does not count.
+ */
 function whereIs(el: Wc, text: string): string[] {
-  return [...el.shadowRoot.querySelectorAll('ok-inline-feedback')]
-    .filter((n) => n.textContent?.trim() === text)
-    .map((n) => (n.closest(CREATE) ? 'panel' : 'page'));
+  const notices = [...el.shadowRoot.querySelectorAll('ok-inline-feedback')].filter(
+    (n) => n.textContent?.trim() === text,
+  );
+  const table = customElements.get('ok-data-table');
+  const tablePaintsError = !!table && 'error' in table.prototype;
+  const tables = [...el.shadowRoot.querySelectorAll('ok-data-table')].filter(
+    (n) => tablePaintsError && (n as HTMLElement & { error?: string }).error === text,
+  );
+  return [...notices, ...tables].map((n) => (n.closest(CREATE) ? 'panel' : 'page'));
 }
 
 /** The notice sits above the button of its form. */
