@@ -4383,7 +4383,7 @@ function majorToMinor(amount, decimals) {
   return Number.isFinite(n6) ? Math.round(n6 * 10 ** decimals) : 0;
 }
 
-// @erplora/module-cart-checkout/ui/lib/quantity.ts
+// ui/lib/quantity.ts
 var QUANTITY_SCALE2 = 1e6;
 function fromMicro2(raw) {
   return raw / QUANTITY_SCALE2;
@@ -4392,7 +4392,7 @@ function formatQuantity2(raw) {
   return String(fromMicro2(raw));
 }
 
-// @erplora/module-cart-checkout/locales/es.json
+// locales/es.json
 var es_default = {
   name: "Carrito y pago",
   description: "Carrito y proceso de pago: a\xF1ade art\xEDculos, cobra y convierte el carrito en un pedido pagado.",
@@ -4443,7 +4443,7 @@ var es_default = {
   }
 };
 
-// @erplora/module-cart-checkout/locales/en.json
+// locales/en.json
 var en_default = {
   name: "Cart & Checkout",
   navigation: {
@@ -4493,7 +4493,7 @@ var en_default = {
   }
 };
 
-// @erplora/module-cart-checkout/ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
+// ui/components/erp-cart-checkout-carts/erp-cart-checkout-carts.ts
 var CATALOG = { es: es_default, en: en_default };
 var STATUS_KEYS = {
   active: "ui.statusActive",
@@ -4700,7 +4700,7 @@ __decorateClass([
 ], ErpCartCheckoutCarts.prototype, "tick", 2);
 define("erp-cart-checkout-carts", ErpCartCheckoutCarts);
 
-// @erplora/module-cart-checkout/ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
+// ui/components/erp-cart-checkout-orders/erp-cart-checkout-orders.ts
 var CATALOG2 = { es: es_default, en: en_default };
 var STATUS_KEYS2 = {
   initiated: "ui.statusInitiated",
