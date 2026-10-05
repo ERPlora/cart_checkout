@@ -68,8 +68,7 @@ Pasos:
 Entra: código de sesión (único por negocio, máximo 128 caracteres), email, nombre, moneda y caducidad opcionales; desde la pantalla va la moneda del negocio.
 Sale: un carrito activo con la moneda indicada o, si no se dice, la del negocio (`EUR` si nunca se fijó) (aviso `cart_checkout.cart.created`).
 Si falla: un código de sesión ya usado en el negocio lo rechaza el índice único, **también si lo usó un carrito borrado** (el índice no excluye los borrados: ese código no se puede reutilizar). Es un error de base de datos que el hub redacta como genérico, sin código; la pantalla muestra «No se pudo crear el carrito» o ese mensaje. Sin permiso, la orden se rechaza.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso cart.created puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F02 Añadir una línea a un carrito
@@ -84,10 +83,7 @@ Entra: código de sesión, referencia y nombre del producto (texto libre), SKU y
 Sale: la línea con su total (cantidad lógica × precio, redondeo del SDK de dinero), los totales del carrito y la hora de última actividad (aviso `cart_checkout.item.added`, que sale del manejador y no del manifiesto).
 Si falla: el esquema para antes del manejador el código, la referencia o el nombre vacíos y la cantidad < 1; el precio < 0 (o ilegible) lo rechaza el manejador. En todos los casos quien llama ve un error genérico del hub («no se pudo completar»): lo que el manejador devuelve como error no viaja con su código. Si el carrito no existe, o no está «Activo», **la orden contesta bien, no guarda nada y emite igualmente el aviso** (la guarda está en el SQL, sin comprobar filas cambiadas).
 En este mismo documento se apoya en: CART_CHECKOUT-F01 (Crear un carrito).
-Implicados: pendiente
-Pendiente de enlazar: hub — HUB-F10 (Ejecutar el manejador de un módulo y validar lo que propone): la orden la ejecuta el manejador WASM
-Pendiente de enlazar: hub — HUB-F18 (Redondear el dinero igual en todos los módulos): el total de la línea usa ese redondeo
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso item.added puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13, HUB-F10, HUB-F18
 QA: ninguno
 
 ### CART_CHECKOUT-F03 Cambiar la cantidad de una línea o quitarla
@@ -103,9 +99,7 @@ Entra: identificador de la línea y cantidad (escala 10⁶); el precio unitario 
 Sale: línea cambiada o borrada (borrado lógico), totales del carrito y última actividad (aviso `cart_checkout.item.updated`, también al poner la cantidad a cero, con `removed: true`; `cart_checkout.item.removed` solo sale de la orden aparte «quitar línea»).
 Si falla: línea inexistente con cantidad > 0 o cantidad no entera: error genérico del hub, sin código (`item_not_found` e `invalid_quantity` no llegan a quien llama). Un carrito que ya no está «Activo» no cambia y la orden **contesta bien** (y emite el aviso).
 En este mismo documento se apoya en: CART_CHECKOUT-F02 (Añadir una línea a un carrito).
-Implicados: pendiente
-Pendiente de enlazar: hub — HUB-F11 (Darle al manejador los datos de otros módulos antes de ejecutar): la fila de la línea llega como lectura previa
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso item.updated o item.removed puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13, HUB-F11
 QA: ninguno
 
 ### CART_CHECKOUT-F04 Vaciar un carrito
@@ -119,8 +113,7 @@ Pasos:
 Entra: código de sesión.
 Sale: líneas con borrado lógico, totales a cero (aviso `cart_checkout.cart.cleared`).
 Si falla: código vacío: lo para el esquema con un error genérico, sin código. Un carrito que no es «Activo» no cambia y la orden contesta bien igualmente.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso cart.cleared puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F05 Abandonar un carrito
@@ -133,8 +126,7 @@ Pasos:
 Entra: identificador del carrito y motivo opcional (máximo 500 caracteres).
 Sale: estado «Abandonado» (aviso `cart_checkout.cart.abandoned`).
 Si falla: solo cambia un carrito «Activo»; en cualquier otro estado la orden contesta bien sin cambiar nada, y el aviso sale igual. La pantalla no pide confirmación.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso cart.abandoned puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F06 Borrar un carrito
@@ -147,8 +139,7 @@ Pasos:
 Entra: identificador del carrito.
 Sale: el carrito queda con borrado lógico en cualquier estado, también «Convertido» (aviso `cart_checkout.cart.deleted`). Sus líneas **no** se tocan, aunque la descripción de la orden diga que se borran con él; ya no se pueden consultar porque la lista de líneas pide el carrito, pero siguen en la base. Los pedidos del carrito siguen existiendo.
 Si falla: un identificador inexistente contesta bien sin cambiar nada y el aviso `cart_checkout.cart.deleted` sale igual.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso cart.deleted puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F07 Caducar los carritos vencidos
@@ -162,8 +153,7 @@ Pasos:
 Entra: nada; la hora la pone el hub.
 Sale: los carritos pasan a «Expirado» (aviso `cart_checkout.carts.expired`, que no dice cuántos).
 Si falla: sin carritos vencidos la orden contesta bien y el aviso sale igual. El módulo no declara tarea programada: un carrito vencido sigue «Activo» hasta que alguien lance la orden. Un carrito sin caducidad no caduca nunca.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso carts.expired puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F08 Iniciar el pedido desde un carrito
@@ -178,9 +168,7 @@ Entra: código de sesión, email obligatorio con forma `algo@algo`, direcciones 
 Sale: un pedido «Iniciado» con el total del carrito en ese instante y el contador del día incrementado (aviso `cart_checkout.checkout.initiated`, con el email del cliente).
 Si falla: código vacío o email de menos de 3 caracteres los para el esquema, y un email sin forma `algo@algo` el manejador: quien llama ve siempre un error genérico del hub, sin código (`missing_*` e `invalid_email` no llegan). Si el carrito no existe, no está «Activo» o no tiene líneas, **no se crea pedido pero la orden contesta bien, el contador sube (hueco en la numeración) y el aviso de iniciado sale igual**. Con un carrito válido, el carrito sigue «Activo» tras iniciar: se pueden cambiar sus líneas y se puede iniciar otro pedido del mismo carrito; el total del pedido ya no cambia.
 En este mismo documento se apoya en: CART_CHECKOUT-F02 (Añadir una línea a un carrito).
-Implicados: pendiente
-Pendiente de enlazar: hub — HUB-F10 (Ejecutar el manejador de un módulo y validar lo que propone): la orden la ejecuta el manejador WASM
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso checkout.initiated puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13, HUB-F10
 QA: ninguno
 
 ### CART_CHECKOUT-F09 Marcar un pedido como pagado
@@ -195,8 +183,7 @@ Entra: identificador del pedido.
 Sale: estado «Pagado» y hora de pago (aviso `cart_checkout.order.paid`). No se cobra, ni se pide importe, medio ni justificante, y no se crea venta, factura, registro fiscal, movimiento de caja ni de stock.
 Si falla: solo cambia un pedido «Iniciado»; en otro estado la orden contesta bien sin cambiar nada y el aviso sale igual. Sin permiso «cobrar» (el empleado), se rechaza.
 En este mismo documento se apoya en: CART_CHECKOUT-F08 (Iniciar el pedido desde un carrito).
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso order.paid puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F10 Registrar que el pago falló
@@ -210,8 +197,7 @@ Entra: identificador del pedido y motivo (obligatorio, máximo 500 caracteres).
 Sale: estado «Fallido» y el motivo añadido a las notas del pedido (aviso `cart_checkout.order.failed`).
 Si falla: cambia cualquier pedido que no esté «Completado», **también uno ya «Pagado»** (el dinero cobrado queda como fallido sin rastro de devolución; por el asistente tampoco hay confirmación reforzada) o uno ya «Fallido» (se repite la nota). Un pedido «Fallido» no se puede volver a iniciar ni pagar; el carrito queda «Activo».
 En este mismo documento se apoya en: CART_CHECKOUT-F08 (Iniciar el pedido desde un carrito).
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso order.failed puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F11 Completar un pedido
@@ -225,8 +211,7 @@ Entra: identificador del pedido.
 Sale: pedido «Completado» con hora y carrito «Convertido», en la misma operación (aviso `cart_checkout.order.completed`). No se emite nada fiscal ni de stock.
 Si falla: solo se completa un pedido «Pagado»; en otro estado no cambia nada, la orden contesta bien y el aviso sale igual. El carrito se convierte aunque sus líneas hayan cambiado después de iniciar el pedido.
 En este mismo documento se apoya en: CART_CHECKOUT-F09 (Marcar un pedido como pagado).
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso order.completed puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ### CART_CHECKOUT-F12 Consultar carritos, líneas y pedidos
@@ -253,8 +238,7 @@ Pasos:
 Entra: la orden que lo provoca.
 Sale: doce avisos publicados (`cart.created`, `cart.abandoned`, `cart.deleted`, `cart.cleared`, `carts.expired`, `item.added`, `item.updated`, `item.removed`, `checkout.initiated`, `order.paid`, `order.failed`, `order.completed`). Ningún módulo del hub los escucha hoy.
 Si falla: como el resto de avisos del hub: si la orden falla no queda ni el cambio ni el aviso; si la orden no cambia filas, el aviso sale igual.
-Implicados: pendiente
-Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): los doce avisos cart_checkout.* puede arrancar una automatización y sale aunque no haya cambiado nada, así que puede arrancar sin que haya pasado lo que dice
+Implicados: FLOWS-F13
 QA: ninguno
 
 ## Cobertura contra la referencia
