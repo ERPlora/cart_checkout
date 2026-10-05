@@ -124,7 +124,7 @@ Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso car
 QA: ninguno
 
 ### CART_CHECKOUT-F05 Abandonar un carrito
-Estado: hecho
+Estado: parcial — sobre un carrito que no está «Activo» la orden contesta bien sin cambiar nada y el aviso de carrito abandonado sale igual
 Actor: administrador, responsable, asistente
 Pantalla: Carritos
 Pasos:
@@ -138,7 +138,7 @@ Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso car
 QA: ninguno
 
 ### CART_CHECKOUT-F06 Borrar un carrito
-Estado: hecho
+Estado: parcial — con un identificador que no existe la orden contesta bien sin borrar nada y el aviso de carrito borrado sale igual; no toca las líneas ni los pedidos del carrito
 Actor: administrador, responsable, asistente
 Pantalla: Carritos
 Pasos:
@@ -184,7 +184,7 @@ Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso che
 QA: ninguno
 
 ### CART_CHECKOUT-F09 Marcar un pedido como pagado
-Estado: hecho
+Estado: parcial — sobre un pedido que no está «Iniciado» la orden contesta bien sin cambiar nada y el aviso de pedido pagado sale igual
 Actor: administrador, responsable
 Pantalla: Pedidos
 Pasos:
@@ -215,7 +215,7 @@ Pendiente de enlazar: flows — FLOWS-F13 (Elegir cuándo arranca): el aviso ord
 QA: ninguno
 
 ### CART_CHECKOUT-F11 Completar un pedido
-Estado: hecho
+Estado: parcial — sobre un pedido que no está «Pagado» la orden contesta bien sin cambiar nada y el aviso sale igual; y convierte el carrito aunque sus líneas hayan cambiado después de iniciar el pedido
 Actor: administrador, responsable, asistente
 Pantalla: Pedidos
 Pasos:
@@ -244,7 +244,7 @@ Implicados: ninguno
 QA: ninguno
 
 ### CART_CHECKOUT-F13 Avisar a otros módulos de lo que ocurre
-Estado: hecho
+Estado: parcial — varios avisos salen aunque la orden no haya cambiado nada (abandonar, borrar, pagar, completar, iniciar), y Automatizaciones los ofrece como disparador
 Actor: sistema
 Pantalla: ninguna
 Pasos:
